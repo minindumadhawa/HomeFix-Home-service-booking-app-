@@ -7,12 +7,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Your web app's Firebase configuration
 // TODO: Replace with your actual Firebase project config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDKQR6q8VrRqDoQnPOpftuZ0p1BiAE3WhA",
+  authDomain: "homefix-c1317.firebaseapp.com",
+  projectId: "homefix-c1317",
+  storageBucket: "homefix-c1317.firebasestorage.app",
+  messagingSenderId: "18432677982",
+  appId: "1:18432677982:web:771bcec2ea6392d4bdfccf"
 };
 
 // Initialize Firebase
