@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function ServicesScreen() {
   return (
@@ -34,7 +35,7 @@ export default function ServicesScreen() {
               style={styles.searchInput}
             />
           </View>
-          <TouchableOpacity style={styles.filterBtn}>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => router.push('/filter')}>
             <Ionicons name="options-outline" size={20} color="#111827" />
           </TouchableOpacity>
         </View>

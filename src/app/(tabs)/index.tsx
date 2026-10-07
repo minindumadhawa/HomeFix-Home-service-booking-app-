@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function HomeScreen() {
   return (
@@ -27,7 +28,7 @@ export default function HomeScreen() {
             placeholderTextColor="#9CA3AF"
             style={styles.searchInput}
           />
-          <TouchableOpacity style={styles.filterBtn}>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => router.push('/filter')}>
             <Ionicons name="options-outline" size={20} color="#6B7280" />
           </TouchableOpacity>
         </View>

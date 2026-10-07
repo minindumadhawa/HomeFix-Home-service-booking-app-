@@ -7,6 +7,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="filter" options={{ presentation: 'modal', headerShown: true, title: 'Filters', headerTitleAlign: 'center', headerShadowVisible: false }} />
       </Stack>
       <StatusBar style="auto" />
     </>
