@@ -18,7 +18,7 @@ export default function TabLayout() {
           height: 60,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: '#4F46E5', // Indigo 600
+        tabBarActiveTintColor: '#10B981', // Green for HomeFix PRO
         tabBarInactiveTintColor: '#9CA3AF', // Gray 400
         tabBarLabelStyle: {
           fontFamily: 'System',
@@ -33,6 +33,17 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={{ marginTop: 4 }}>
               <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="services"
+        options={{
+          title: 'Services',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ marginTop: 4 }}>
+              <Ionicons name={focused ? 'grid' : 'grid-outline'} size={24} color={color} />
             </View>
           ),
         }}
