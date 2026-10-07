@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, Scro
 import { Ionicons } from '@expo/vector-icons';
 import { router, Link } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../../config/firebase';
 
 export default function LoginScreen() {
   const [phoneOrEmail, setPhoneOrEmail] = useState('');
@@ -25,9 +26,25 @@ export default function LoginScreen() {
       const isEmail = cleanInput.includes('@');
       const authEmail = isEmail ? cleanInput : `${cleanInput.replace(/[^0-9]/g, '')}@homefix.local`;
       
-      await signInWithEmailAndPassword(auth, authEmail, password);
+      const userCredential = await signInWithEmailAndPassword(auth, authEmail, password);
       
-      router.replace('/(tabs)');
+      // Fetch user role from Firestore
+      let userRole = 'customer';
+      try {
+        const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+        if (userDoc.exists()) {
+          userRole = userDoc.data().role || 'customer';
+        }
+      } catch (dbError) {
+        console.warn("Could not fetch user role", dbError);
+      }
+
+      // Redirect based on role
+      if (userRole === 'provider') {
+        router.replace('/(tabs)/profile');
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error: any) {
       console.error("Firebase Auth Error:", error);
       setErrorMessage('Invalid credentials or account does not exist.');

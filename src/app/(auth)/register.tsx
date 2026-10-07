@@ -13,6 +13,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [role, setRole] = useState('customer'); // 'customer' or 'provider'
 
   const handleRegister = async () => {
     setErrorMessage('');
@@ -32,10 +33,25 @@ export default function RegisterScreen() {
       
       const userCredential = await createUserWithEmailAndPassword(auth, authEmail, password);
       
-      // We successfully created the user in Firebase Auth!
-      // (Temporarily skipping Firestore user data storage until database is enabled)
+      // Save the user's selected role to Firestore
+      try {
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          uid: userCredential.user.uid,
+          phone: '+94' + cleanPhone,
+          email: email,
+          role: role,
+          createdAt: new Date().toISOString()
+        });
+      } catch (dbError) {
+        console.warn("Firestore error (did you enable it?): ", dbError);
+        // Continue anyway so they are logged in locally
+      }
       
-      router.replace('/(tabs)');
+      if (role === 'provider') {
+        router.replace('/(tabs)/profile');
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error: any) {
       console.error("Firebase Auth Error:", error);
       setErrorMessage(error.message || 'An error occurred during registration.');
@@ -57,9 +73,19 @@ export default function RegisterScreen() {
           </View>
         </View>
 
-        <View style={styles.badge}>
-          <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-          <Text style={styles.badgeText}>CUSTOMER ACCOUNT</Text>
+        <View style={styles.roleContainer}>
+          <TouchableOpacity 
+            style={[styles.roleBtn, role === 'customer' && styles.roleBtnActive]} 
+            onPress={() => setRole('customer')}
+          >
+            <Text style={[styles.roleText, role === 'customer' && styles.roleTextActive]}>Customer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.roleBtn, role === 'provider' && styles.roleBtnActive]} 
+            onPress={() => setRole('provider')}
+          >
+            <Text style={[styles.roleText, role === 'provider' && styles.roleTextActive]}>Service Provider</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.title}>Join HomeFix</Text>
@@ -152,8 +178,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   backBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   profileAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
-  badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, marginBottom: 12 },
-  badgeText: { color: '#059669', fontSize: 12, fontWeight: 'bold', marginLeft: 6 },
+  roleContainer: { flexDirection: 'row', backgroundColor: '#E5E7EB', borderRadius: 12, padding: 4, marginBottom: 20 },
+  roleBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  roleBtnActive: { backgroundColor: '#10B981' },
+  roleText: { fontSize: 13, fontWeight: 'bold', color: '#6B7280' },
+  roleTextActive: { color: '#FFF' },
   title: { fontSize: 28, fontWeight: 'bold', color: '#111827', marginBottom: 24 },
   card: { backgroundColor: '#FFF', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3, marginBottom: 40 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
