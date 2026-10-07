@@ -217,9 +217,9 @@ export default function BookingAddressDetailsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Continue to Review Button */}
+        {/* Review & Proceed to Payment Button */}
         <TouchableOpacity style={styles.continueBtn} activeOpacity={0.8}>
-          <Text style={styles.continueText}>Continue to Review</Text>
+          <Text style={styles.continueText}>Review & Proceed to Payment</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFF" style={{ marginLeft: 6 }} />
         </TouchableOpacity>
 
