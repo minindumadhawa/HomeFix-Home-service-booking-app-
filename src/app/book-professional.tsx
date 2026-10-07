@@ -187,15 +187,15 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   proCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#111827',
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   proCardHeader: {
     flexDirection: 'row',
@@ -203,15 +203,17 @@ const styles = StyleSheet.create({
   proAvatarContainer: {
     width: 60,
     height: 60,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#1F2937',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#374151',
   },
   proPhotoText: {
     fontSize: 8,
-    color: '#6B7280',
+    color: '#9CA3AF',
     marginTop: 2,
   },
   proInfo: {
@@ -240,7 +242,7 @@ const styles = StyleSheet.create({
   proRating: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#D97706',
+    color: '#FBBF24',
   },
   proReviews: {
     color: '#9CA3AF',
@@ -249,17 +251,17 @@ const styles = StyleSheet.create({
   proName: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#FFF',
     marginBottom: 4,
   },
   proRate: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#374151',
+    color: '#10B981',
     marginBottom: 2,
   },
   proDot: {
-    color: '#9CA3AF',
+    color: '#6B7280',
   },
   proDistance: {
     fontSize: 12,
