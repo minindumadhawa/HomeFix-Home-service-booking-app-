@@ -1,9 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function BookingAddressDetailsScreen() {
+  const params = useLocalSearchParams<{
+    selectedDate?: string;
+    selectedTime?: string;
+  }>();
+
+  const selectedDate = params.selectedDate || 'Thu, Oct 8';
+  const selectedTime = params.selectedTime || '10:30 AM';
+
   const [selectedAddressType, setSelectedAddressType] = useState<'Home' | 'Work' | 'New'>('Home');
   const [landmarkInstruction, setLandmarkInstruction] = useState('');
   const [issueDescription, setIssueDescription] = useState('');
@@ -218,7 +226,28 @@ export default function BookingAddressDetailsScreen() {
         </View>
 
         {/* Review & Proceed to Payment Button */}
-        <TouchableOpacity style={styles.continueBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.continueBtn}
+          activeOpacity={0.8}
+          onPress={() => {
+            const currentAddress = addresses[selectedAddressType];
+            router.push({
+              pathname: '/booking-review-payment',
+              params: {
+                selectedDate,
+                selectedTime,
+                addressType: selectedAddressType === 'New' ? 'Custom' : selectedAddressType,
+                addressLabel: currentAddress.label,
+                addressLine1: currentAddress.line1,
+                addressLine2: currentAddress.line2,
+                addressPhone: currentAddress.phone,
+                landmarkInstruction,
+                issueDescription,
+                attachedPhotosJson: JSON.stringify(attachedPhotos),
+              },
+            });
+          }}
+        >
           <Text style={styles.continueText}>Review & Proceed to Payment</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFF" style={{ marginLeft: 6 }} />
         </TouchableOpacity>

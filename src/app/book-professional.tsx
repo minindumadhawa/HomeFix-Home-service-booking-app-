@@ -208,7 +208,13 @@ export default function BookProfessionalScreen() {
         <TouchableOpacity 
           style={styles.continueBtn} 
           activeOpacity={0.8}
-          onPress={() => router.push('/booking-address-details')}
+          onPress={() => router.push({
+            pathname: '/booking-address-details',
+            params: {
+              selectedDate: getDisplayDate(),
+              selectedTime: selectedTimeSlot,
+            },
+          })}
         >
           <Text style={styles.continueText}>Continue</Text>
           <Ionicons name="arrow-forward" size={18} color="#FFF" style={{ marginLeft: 6 }} />
