@@ -179,9 +179,9 @@ export default function BookProfessionalScreen() {
                 style={[styles.timeCard, isSelected && styles.timeCardActive]}
                 onPress={() => setSelectedTimeSlot(slot.time)}
               >
-                <Ionicons name="time" size={16} color={isSelected ? '#10B981' : '#6B7280'} style={{ marginBottom: 4 }} />
+                <Ionicons name="time" size={16} color={isSelected ? '#FFF' : '#6B7280'} style={{ marginBottom: 4 }} />
                 <Text style={[styles.timeText, isSelected && styles.timeTextActive]}>{slot.time}</Text>
-                <Text style={styles.periodText}>{slot.period}</Text>
+                <Text style={[styles.periodText, isSelected && styles.periodTextActive]}>{slot.period}</Text>
               </TouchableOpacity>
             );
           })}
@@ -529,7 +529,12 @@ const styles = StyleSheet.create({
   },
   timeCardActive: {
     borderColor: '#10B981',
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   timeText: {
     fontSize: 13,
@@ -538,11 +543,15 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   timeTextActive: {
-    color: '#10B981',
+    color: '#FFF',
   },
   periodText: {
     fontSize: 10,
     color: '#9CA3AF',
+  },
+  periodTextActive: {
+    color: '#E6FFFA',
+    fontWeight: '600',
   },
   summaryCard: {
     backgroundColor: '#FFF',

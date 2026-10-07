@@ -299,7 +299,7 @@ export default function BookingReviewPaymentScreen() {
                   <Ionicons
                     name={method.icon as any}
                     size={22}
-                    color={isSelected ? '#10B981' : '#4B5563'}
+                    color={isSelected ? '#FFF' : '#4B5563'}
                   />
                 </View>
 
@@ -309,12 +309,14 @@ export default function BookingReviewPaymentScreen() {
                       {method.title}
                     </Text>
                     {method.badge && (
-                      <View style={styles.methodBadge}>
-                        <Text style={styles.methodBadgeText}>{method.badge}</Text>
+                      <View style={[styles.methodBadge, isSelected && styles.methodBadgeActive]}>
+                        <Text style={[styles.methodBadgeText, isSelected && styles.methodBadgeTextActive]}>{method.badge}</Text>
                       </View>
                     )}
                   </View>
-                  <Text style={styles.paymentMethodSubtitle}>{method.subtitle}</Text>
+                  <Text style={[styles.paymentMethodSubtitle, isSelected && styles.paymentMethodSubtitleActive]}>
+                    {method.subtitle}
+                  </Text>
                 </View>
 
                 <View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
@@ -641,7 +643,12 @@ const styles = StyleSheet.create({
   },
   paymentMethodCardActive: {
     borderColor: '#10B981',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#10B981',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   paymentIconBox: {
     width: 40,
@@ -653,7 +660,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   paymentIconBoxActive: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
   },
   paymentMethodInfo: {
     flex: 1,
@@ -668,13 +675,17 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   paymentMethodTitleActive: {
-    color: '#065F46',
+    color: '#FFF',
     fontWeight: 'bold',
   },
   paymentMethodSubtitle: {
     fontSize: 11,
     color: '#6B7280',
     marginTop: 2,
+  },
+  paymentMethodSubtitleActive: {
+    color: '#E6FFFA',
+    fontWeight: '500',
   },
   methodBadge: {
     backgroundColor: '#ECFDF5',
@@ -685,10 +696,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#A7F3D0',
   },
+  methodBadgeActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: '#FFF',
+  },
   methodBadgeText: {
     fontSize: 9,
     fontWeight: 'bold',
     color: '#059669',
+  },
+  methodBadgeTextActive: {
+    color: '#FFF',
   },
   radioCircle: {
     width: 20,
@@ -700,7 +718,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   radioCircleActive: {
-    borderColor: '#10B981',
+    borderColor: '#FFF',
+    backgroundColor: '#FFF',
   },
   radioInner: {
     width: 10,
