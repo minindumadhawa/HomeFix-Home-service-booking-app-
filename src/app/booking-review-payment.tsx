@@ -54,21 +54,40 @@ export default function BookingReviewPaymentScreen() {
   }
 
   const handleConfirmAndBook = () => {
-    setIsBooked(true);
-    Alert.alert(
-      '🎉 Booking Confirmed!',
-      'Your service booking with Nimal Silva Electrical Works has been successfully placed. A professional will arrive at the scheduled time.',
-      [
-        {
-          text: 'Go to My Bookings',
-          onPress: () => router.replace('/(tabs)/bookings'),
+    const bookingPayload = {
+      selectedDate,
+      selectedTime,
+      addressType,
+      addressLine1,
+      addressLine2,
+      addressPhone,
+      landmarkInstruction,
+      issueDescription,
+      totalAmount: '2,320.00',
+    };
+
+    if (selectedPayment === 'Card') {
+      // Directs to Card Payment details input page
+      router.push({
+        pathname: '/card-payment',
+        params: bookingPayload,
+      });
+    } else {
+      // Directs directly to confirmation page (Cash, KOKO, LankaQR)
+      router.push({
+        pathname: '/booking-confirmation',
+        params: {
+          ...bookingPayload,
+          status: 'confirmed',
+          paymentMethod:
+            selectedPayment === 'Cash'
+              ? 'Cash on Completion'
+              : selectedPayment === 'KOKO'
+              ? 'KOKO Payment (Pay in 3)'
+              : 'LANKAQR / Online Banking',
         },
-        {
-          text: 'Return Home',
-          onPress: () => router.replace('/(tabs)'),
-        },
-      ]
-    );
+      });
+    }
   };
 
   const paymentMethods = [
