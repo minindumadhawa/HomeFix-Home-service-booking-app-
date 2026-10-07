@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function BookingAddressDetailsScreen() {
   const [selectedAddressType, setSelectedAddressType] = useState<'Home' | 'Work' | 'New'>('Home');
@@ -67,7 +67,7 @@ export default function BookingAddressDetailsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
+
         {/* Section 1: Select Service Address */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>SELECT SERVICE ADDRESS</Text>
@@ -126,7 +126,7 @@ export default function BookingAddressDetailsScreen() {
               <Ionicons name="create-outline" size={18} color="#10B981" style={{ marginRight: 6 }} />
               <Text style={styles.customFormTitle}>Enter New Custom Address</Text>
             </View>
-            
+
             <View style={styles.customInputGroup}>
               <Text style={styles.inputLabel}>Street Address / House No.</Text>
               <TextInput
