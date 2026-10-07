@@ -1,20 +1,23 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 export default function BookProfessionalScreen() {
-  const [selectedDateIndex, setSelectedDateIndex] = useState(1); // Default to Tomorrow
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('10:30 AM');
+  // Dynamic date strip state
+  const [datesList, setDatesList] = useState([
+    { dayName: 'Today', dayNum: '7', month: 'Oct', fullDate: 'Wed, Oct 7', rawDay: 7 },
+    { dayName: 'Tomorrow', dayNum: '8', month: 'Oct', fullDate: 'Thu, Oct 8', rawDay: 8 },
+    { dayName: 'Thu', dayNum: '9', month: 'Oct', fullDate: 'Fri, Oct 9', rawDay: 9 },
+    { dayName: 'Fri', dayNum: '10', month: 'Oct', fullDate: 'Sat, Oct 10', rawDay: 10 },
+    { dayName: 'Sat', dayNum: '11', month: 'Oct', fullDate: 'Sun, Oct 11', rawDay: 11 },
+    { dayName: 'Sun', dayNum: '12', month: 'Oct', fullDate: 'Mon, Oct 12', rawDay: 12 },
+  ]);
 
-  const dates = [
-    { dayName: 'Today', dayNum: '7', month: 'Oct' },
-    { dayName: 'Tomorrow', dayNum: '8', month: 'Oct' },
-    { dayName: 'Thu', dayNum: '9', month: 'Oct' },
-    { dayName: 'Fri', dayNum: '10', month: 'Oct' },
-    { dayName: 'Sat', dayNum: '11', month: 'Oct' },
-    { dayName: 'Sun', dayNum: '12', month: 'Oct' },
-  ];
+  const [selectedDateIndex, setSelectedDateIndex] = useState(1); // Default Tomorrow (Oct 8)
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('10:30 AM');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calSelectedDay, setCalSelectedDay] = useState(8); // Default 8th
 
   const timeSlots = [
     { id: '1', time: '09:00 AM', period: 'Morning' },
@@ -24,6 +27,65 @@ export default function BookProfessionalScreen() {
     { id: '5', time: '05:30 PM', period: 'Evening' },
     { id: '6', time: '07:00 PM', period: 'Evening' },
   ];
+
+  // Calendar logic for October 2026 (Current Date: Oct 7, 2026)
+  const currentMonthName = 'October 2026';
+  const todayDay = 7; // October 7 is Today
+  const totalDaysInMonth = 31;
+  // October 1, 2026 starts on Thursday (index 4: Sun 0, Mon 1, Tue 2, Wed 3, Thu 4)
+  const startDayOffset = 4;
+
+  const calendarDays = [];
+  // Empty offset slots
+  for (let i = 0; i < startDayOffset; i++) {
+    calendarDays.push({ dayNumber: null, isPast: false });
+  }
+  // Days of month
+  for (let day = 1; day <= totalDaysInMonth; day++) {
+    calendarDays.push({
+      dayNumber: day,
+      isPast: day < todayDay, // Past dates disabled
+    });
+  }
+
+  // Handle selecting any date from the Calendar Modal
+  const handleSelectCalDate = (dayNum: number) => {
+    setCalSelectedDay(dayNum);
+
+    // Check if dayNum already exists in date cards list
+    const existingIdx = datesList.findIndex((d) => d.rawDay === dayNum);
+
+    if (existingIdx !== -1) {
+      setSelectedDateIndex(existingIdx);
+    } else {
+      // Dynamically add the selected date to the cards strip so it is displayed and highlighted!
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      // Oct 1, 2026 is Thursday (4) -> Oct N day of week = (4 + N - 1) % 7
+      const dayOfWeekStr = dayNames[(4 + dayNum - 1) % 7];
+      
+      const newItem = {
+        dayName: dayOfWeekStr,
+        dayNum: String(dayNum),
+        month: 'Oct',
+        fullDate: `${dayOfWeekStr}, Oct ${dayNum}`,
+        rawDay: dayNum,
+      };
+
+      const updatedList = [...datesList, newItem].sort((a, b) => a.rawDay - b.rawDay);
+      setDatesList(updatedList);
+
+      const newIdx = updatedList.findIndex((d) => d.rawDay === dayNum);
+      setSelectedDateIndex(newIdx);
+    }
+
+    setIsCalendarOpen(false);
+  };
+
+  const getDisplayDate = () => {
+    const selectedItem = datesList[selectedDateIndex];
+    if (!selectedItem) return 'Oct 8';
+    return `${selectedItem.dayName}, Oct ${selectedItem.dayNum}`;
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -43,7 +105,7 @@ export default function BookProfessionalScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
-        {/* Professional Details Card */}
+        {/* Professional Details Card (Dark Styling) */}
         <View style={styles.proCard}>
           <View style={styles.proCardHeader}>
             <View style={styles.proAvatarContainer}>
@@ -57,7 +119,7 @@ export default function BookProfessionalScreen() {
                   <Text style={styles.verifiedText}>VERIFIED</Text>
                 </View>
                 <Text style={styles.proRating}>
-                  <Ionicons name="star" size={12} color="#F59E0B" /> 4.8 <Text style={styles.proReviews}>(94 reviews)</Text>
+                  <Ionicons name="star" size={12} color="#FBBF24" /> 4.8 <Text style={styles.proReviews}>(94 reviews)</Text>
                 </Text>
               </View>
               <Text style={styles.proName}>Nimal Silva Electrical Works</Text>
@@ -72,17 +134,27 @@ export default function BookProfessionalScreen() {
         {/* Section 1: Select Date */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>SELECT DATE</Text>
-          <Ionicons name="calendar-outline" size={18} color="#10B981" />
+          <TouchableOpacity 
+            style={styles.calendarIconBtn} 
+            onPress={() => setIsCalendarOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar-outline" size={18} color="#10B981" />
+            <Text style={styles.calendarBtnLabel}>Calendar View</Text>
+          </TouchableOpacity>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.datesScroll} contentContainerStyle={styles.datesContainer}>
-          {dates.map((item, index) => {
+          {datesList.map((item, index) => {
             const isSelected = selectedDateIndex === index;
             return (
               <TouchableOpacity
-                key={index}
+                key={item.rawDay}
                 style={[styles.dateCard, isSelected && styles.dateCardActive]}
-                onPress={() => setSelectedDateIndex(index)}
+                onPress={() => {
+                  setSelectedDateIndex(index);
+                  setCalSelectedDay(item.rawDay);
+                }}
               >
                 <Text style={[styles.dayName, isSelected && styles.dateTextActive]}>{item.dayName}</Text>
                 <Text style={[styles.dayNum, isSelected && styles.dateTextActive]}>{item.dayNum}</Text>
@@ -124,7 +196,7 @@ export default function BookProfessionalScreen() {
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Selected Date:</Text>
-            <Text style={styles.summaryValue}>{dates[selectedDateIndex].dayName}, Oct {dates[selectedDateIndex].dayNum}</Text>
+            <Text style={styles.summaryValue}>{getDisplayDate()}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Selected Time:</Text>
@@ -139,6 +211,98 @@ export default function BookProfessionalScreen() {
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* Full Month Calendar Modal */}
+      <Modal
+        visible={isCalendarOpen}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsCalendarOpen(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setIsCalendarOpen(false)}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Booking Date</Text>
+              <TouchableOpacity onPress={() => setIsCalendarOpen(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={22} color="#111827" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Month Control */}
+            <View style={styles.monthHeader}>
+              <TouchableOpacity style={styles.monthNavBtn}>
+                <Ionicons name="chevron-back" size={20} color="#6B7280" />
+              </TouchableOpacity>
+              <Text style={styles.monthTitle}>{currentMonthName}</Text>
+              <TouchableOpacity style={styles.monthNavBtn}>
+                <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Days of Week Header */}
+            <View style={styles.weekDaysRow}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
+                <Text key={idx} style={styles.weekDayText}>{day}</Text>
+              ))}
+            </View>
+
+            {/* Calendar Days Grid */}
+            <View style={styles.daysGrid}>
+              {calendarDays.map((item, index) => {
+                if (item.dayNumber === null) {
+                  return <View key={index} style={styles.daySlotEmpty} />;
+                }
+
+                const isPast = item.isPast;
+                const isSelected = calSelectedDay === item.dayNumber;
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    disabled={isPast}
+                    style={[
+                      styles.daySlot,
+                      isPast && styles.daySlotPast,
+                      isSelected && styles.daySlotSelected,
+                    ]}
+                    onPress={() => handleSelectCalDate(item.dayNumber!)}
+                  >
+                    <Text
+                      style={[
+                        styles.daySlotText,
+                        isPast && styles.daySlotTextPast,
+                        isSelected && styles.daySlotTextSelected,
+                      ]}
+                    >
+                      {item.dayNumber}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Modal Footer Tip */}
+            <View style={styles.modalFooter}>
+              <View style={styles.legendRow}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
+                  <Text style={styles.legendText}>Selected</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#E5E7EB' }]} />
+                  <Text style={styles.legendText}>Past (Disabled)</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -280,6 +444,22 @@ const styles = StyleSheet.create({
     color: '#111827',
     letterSpacing: 0.5,
   },
+  calendarIconBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  calendarBtnLabel: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#059669',
+    marginLeft: 4,
+  },
   datesScroll: {
     marginBottom: 20,
   },
@@ -399,5 +579,125 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 15,
     fontWeight: 'bold',
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: 34,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  monthHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  monthNavBtn: {
+    padding: 4,
+  },
+  monthTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  weekDaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    paddingBottom: 8,
+  },
+  weekDayText: {
+    width: '14%',
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#6B7280',
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  daySlotEmpty: {
+    width: '14%',
+    height: 40,
+  },
+  daySlot: {
+    width: '14%',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    marginBottom: 6,
+  },
+  daySlotPast: {
+    backgroundColor: 'transparent',
+    opacity: 0.3,
+  },
+  daySlotSelected: {
+    backgroundColor: '#10B981',
+  },
+  daySlotText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  daySlotTextPast: {
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through',
+  },
+  daySlotTextSelected: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
+  modalFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 12,
+    alignItems: 'center',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#6B7280',
   },
 });
