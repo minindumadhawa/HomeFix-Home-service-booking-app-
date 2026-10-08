@@ -60,6 +60,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="support"
+        options={{
+          title: 'Support',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ marginTop: 4 }}>
+              <Ionicons name={focused ? 'headset' : 'headset-outline'} size={24} color={color} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
