@@ -185,7 +185,8 @@ export default function ProviderDetailsScreen() {
 
                 <TouchableOpacity
                   style={styles.desktopHeaderBookBtn}
-                  onPress={() => setBookModalVisible(true)}
+                  activeOpacity={1}
+                  disabled={true}
                 >
                   <Ionicons name="flash" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                   <Text style={styles.desktopHeaderBookText}>Instant Book</Text>
@@ -286,7 +287,8 @@ export default function ProviderDetailsScreen() {
                   </View>
                   <TouchableOpacity
                     style={styles.desktopInstantBookAction}
-                    onPress={() => setBookModalVisible(true)}
+                    activeOpacity={1}
+                    disabled={true}
                   >
                     <Ionicons name="calendar" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                     <Text style={styles.desktopInstantBookActionText}>Book Service Appointment</Text>
@@ -913,8 +915,8 @@ export default function ProviderDetailsScreen() {
 
             <TouchableOpacity
               style={styles.instantBookBtn}
-              onPress={() => setBookModalVisible(true)}
-              activeOpacity={0.8}
+              activeOpacity={1}
+              disabled={true}
             >
               <Ionicons name="flash" size={17} color="#FFFFFF" style={{ marginRight: 6, flexShrink: 0 }} />
               <Text style={styles.instantBookBtnText} numberOfLines={1}>Instant Book</Text>
@@ -937,7 +939,6 @@ export default function ProviderDetailsScreen() {
           provider={provider}
           onSuccess={() => {
             setBookModalVisible(false);
-            router.push('/(tabs)/bookings');
           }}
         />
 
