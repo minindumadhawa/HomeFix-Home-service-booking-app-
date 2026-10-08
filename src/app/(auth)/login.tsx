@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Link } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -141,7 +141,7 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         <View style={styles.signupRow}>
-          <Text style={styles.signupText}>Don't have an account? </Text>
+          <Text style={styles.signupText}>{"Don't have an account? "}</Text>
           <Link href="/(auth)/register" asChild>
             <TouchableOpacity>
               <Text style={styles.signupLink}>Sign Up</Text>

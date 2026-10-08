@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 export default function ServicesScreen() {
+  const [activeCategory, setActiveCategory] = useState('All');
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -10,7 +13,7 @@ export default function ServicesScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity style={styles.backBtn}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color="#111827" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Categories Directory</Text>
@@ -19,7 +22,7 @@ export default function ServicesScreen() {
             <TouchableOpacity style={styles.searchIconBtn}>
               <Ionicons name="search" size={22} color="#111827" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.profileAvatar}>
+            <TouchableOpacity style={styles.profileAvatar} onPress={() => router.push('/(tabs)/profile')}>
               <Ionicons name="person" size={16} color="#FFF" />
             </TouchableOpacity>
           </View>
@@ -42,21 +45,17 @@ export default function ServicesScreen() {
 
         {/* Horizontal Pills */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillsScroll} contentContainerStyle={styles.pillsContainer}>
-          <TouchableOpacity style={[styles.pill, styles.pillActive]}>
-            <Text style={[styles.pillText, styles.pillTextActive]}>All (24)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pill}>
-            <Text style={styles.pillText}>Plumbing</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pill}>
-            <Text style={styles.pillText}>Electrical</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pill}>
-            <Text style={styles.pillText}>Cleaning</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pill}>
-            <Text style={styles.pillText}>AC & Appliances</Text>
-          </TouchableOpacity>
+          {['All', 'Plumbing', 'Electrical', 'Cleaning', 'AC & Appliances'].map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.pill, activeCategory === cat && styles.pillActive]}
+              onPress={() => setActiveCategory(cat)}
+            >
+              <Text style={[styles.pillText, activeCategory === cat && styles.pillTextActive]}>
+                {cat === 'All' ? 'All (24)' : cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
 
         {/* Urgent Help Banner */}
@@ -78,21 +77,112 @@ export default function ServicesScreen() {
           </View>
           <View style={styles.urgentBannerBottom}>
             <View style={styles.standbyRow}>
-              <Ionicons name="checkmark-shield-outline" size={14} color="#10B981" />
+              <Ionicons name="shield-checkmark-outline" size={14} color="#10B981" />
               <Text style={styles.standbyText}>Dedicated SOS Unit on standby</Text>
             </View>
-            <TouchableOpacity style={styles.instantReqBtn}>
+            <TouchableOpacity style={styles.instantReqBtn} onPress={() => router.push('/provider/gamage-wdk' as any)}>
               <Text style={styles.instantReqText}>Instant Request</Text>
               <Ionicons name="arrow-forward" size={14} color="#FFF" style={{marginLeft: 4}} />
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* Featured Service Providers Showcase */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Top Verified Specialists</Text>
+          <Text style={styles.sectionSubtitle}>GOVT. CERTIFIED PROS</Text>
+        </View>
+
+        {/* Gamage W.D.K Provider Card */}
+        <TouchableOpacity
+          style={styles.providerCardFeatured}
+          onPress={() => router.push('/provider/gamage-wdk' as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.proFeaturedRow}>
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?q=80&w=200&auto=format&fit=crop' }}
+              style={styles.proFeaturedAvatar}
+            />
+            <View style={styles.proFeaturedInfo}>
+              <View style={styles.proBadgeRow}>
+                <View style={styles.verifiedMiniBadge}>
+                  <Ionicons name="shield-checkmark" size={11} color="#10B981" style={{ marginRight: 3 }} />
+                  <Text style={styles.verifiedMiniText}>NVQ 4 CERTIFIED</Text>
+                </View>
+                <Text style={styles.proRatingText}>
+                  <Ionicons name="star" size={12} color="#F59E0B" /> 4.9 (128)
+                </Text>
+              </View>
+              <Text style={styles.proFeaturedName}>Gamage W.D.K.</Text>
+              <Text style={styles.proFeaturedTrade}>Master Plumber & Pipe Specialist</Text>
+              <Text style={styles.proFeaturedRate}>From $40/hr • Colombo District</Text>
+            </View>
+          </View>
+          <View style={styles.proCardFooter}>
+            <View style={styles.proCheckRow}>
+              <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+              <Text style={styles.proCheckText}>Police & NIC Verified • 12+ Yrs Exp</Text>
+            </View>
+            <View style={styles.viewProfileBtn}>
+              <Text style={styles.viewProfileText}>View Profile</Text>
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
+            </View>
+          </View>
+        </TouchableOpacity>
+
         {/* Core Categories Header */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Core Categories</Text>
           <Text style={styles.sectionSubtitle}>6 SPECIALIZATIONS</Text>
         </View>
+
+        {/* Plumbing Category Card */}
+        <TouchableOpacity
+          style={styles.categoryCard}
+          onPress={() => router.push('/provider/gamage-wdk' as any)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.cardTopRow}>
+            <View style={styles.cardTitleRow}>
+              <View style={styles.blackIconBox}>
+                <Ionicons name="build-outline" size={20} color="#FFF" />
+              </View>
+              <View>
+                <Text style={styles.cardTitle}>Plumbing & Pipe Works</Text>
+                <View style={styles.prosAvailableRow}>
+                  <View style={styles.greenDot} />
+                  <Text style={styles.prosAvailableText}>Gamage W.D.K. & 18 Pros</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.priceCol}>
+              <Text style={styles.startsAt}>Starts at</Text>
+              <Text style={styles.priceText}>$40/hr</Text>
+            </View>
+          </View>
+          
+          <View style={styles.cardMidRow}>
+            <Image source={{uri: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?q=80&w=200&auto=format&fit=crop'}} style={styles.cardImage} />
+            <View style={styles.tagsContainer}>
+              <View style={styles.tag}><Text style={styles.tagText}>Leak Detection</Text></View>
+              <View style={styles.tag}><Text style={styles.tagText}>Pipe Repair</Text></View>
+              <View style={styles.tag}><Text style={styles.tagText}>Valves & Drains</Text></View>
+              <View style={styles.tagGrey}><Text style={styles.tagTextGrey}>+2 more</Text></View>
+            </View>
+          </View>
+
+          <View style={styles.cardBottomRow}>
+            <View style={styles.featureRow}>
+              <Ionicons name="shield-checkmark-outline" size={14} color="#10B981" />
+              <Text style={styles.featureText}>Background audited master technicians</Text>
+            </View>
+            <View style={styles.viewSolutionsRow}>
+              <Text style={styles.viewSolutionsText}>Select Specialist</Text>
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* Category Card 1 */}
         <View style={styles.categoryCard}>
@@ -130,9 +220,12 @@ export default function ServicesScreen() {
               <Ionicons name="checkmark-circle-outline" size={14} color="#10B981" />
               <Text style={styles.featureText}>Safety-tested diagnostic protocol</Text>
             </View>
-            <TouchableOpacity style={styles.viewSolutionsRow}>
-              <Text style={styles.viewSolutionsText}>View 5 Solutions</Text>
-              <Ionicons name="chevron-down" size={14} color="#10B981" />
+            <TouchableOpacity
+              style={styles.viewSolutionsRow}
+              onPress={() => router.push('/provider/nimal-silva' as any)}
+            >
+              <Text style={styles.viewSolutionsText}>View Verified Electrician</Text>
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
             </TouchableOpacity>
           </View>
         </View>
@@ -333,5 +426,107 @@ const styles = StyleSheet.create({
   packDesc: { fontSize: 13, color: '#6B7280', marginBottom: 16, lineHeight: 18 },
   packFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 12 },
   bookServiceBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  bookServiceText: { color: '#FFF', fontSize: 13, fontWeight: 'bold' }
+  bookServiceText: { color: '#FFF', fontSize: 13, fontWeight: 'bold' },
+  providerCardFeatured: {
+    marginHorizontal: 16,
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  proFeaturedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  proFeaturedAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    marginRight: 14,
+    backgroundColor: '#E5E7EB',
+  },
+  proFeaturedInfo: {
+    flex: 1,
+  },
+  proBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  verifiedMiniBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  verifiedMiniText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#065F46',
+  },
+  proRatingText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  proFeaturedName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  proFeaturedTrade: {
+    fontSize: 12,
+    color: '#4B5563',
+    marginTop: 2,
+  },
+  proFeaturedRate: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#10B981',
+    marginTop: 2,
+  },
+  proCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 10,
+  },
+  proCheckRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  proCheckText: {
+    fontSize: 11,
+    color: '#4B5563',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  viewProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  viewProfileText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#10B981',
+    marginRight: 2,
+  },
 });
