@@ -17,7 +17,6 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { getProviderById, DEFAULT_PROVIDERS } from '../../services/providerService';
 import { ServiceProvider, ProfessionalLicense } from '../../types/provider';
 import CertificateModal from '../../components/provider/CertificateModal';
-import InstantBookModal from '../../components/provider/InstantBookModal';
 import MessageModal from '../../components/provider/MessageModal';
 
 type TabType = 'OVERVIEW' | 'CREDENTIALS' | 'REVIEWS';
@@ -38,7 +37,6 @@ export default function ProviderDetailsScreen() {
   // Modals state
   const [certModalVisible, setCertModalVisible] = useState(false);
   const [selectedLicense, setSelectedLicense] = useState<ProfessionalLicense | null>(null);
-  const [bookModalVisible, setBookModalVisible] = useState(false);
   const [messageModalVisible, setMessageModalVisible] = useState(false);
 
   // Helpful counts state mapped by review ID
@@ -104,6 +102,22 @@ export default function ProviderDetailsScreen() {
   const handleViewCert = (license: ProfessionalLicense) => {
     setSelectedLicense(license);
     setCertModalVisible(true);
+  };
+
+  const handleBookAppointment = (instantBooking = false) => {
+    if (!provider) return;
+
+    router.push({
+      pathname: '/book-professional',
+      params: {
+        providerId: provider.id,
+        providerName: provider.name,
+        providerTitle: provider.title,
+        providerRate: `${provider.rates.standard.rate}${provider.rates.standard.unit}`,
+        serviceTitle: provider.skills[0] || provider.title,
+        instantBooking: instantBooking ? 'true' : 'false',
+      },
+    });
   };
 
   if (loading || !provider) {
@@ -185,8 +199,8 @@ export default function ProviderDetailsScreen() {
 
                 <TouchableOpacity
                   style={styles.desktopHeaderBookBtn}
-                  activeOpacity={1}
-                  disabled={true}
+                  onPress={() => handleBookAppointment(true)}
+                  activeOpacity={0.8}
                 >
                   <Ionicons name="flash" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                   <Text style={styles.desktopHeaderBookText}>Instant Book</Text>
@@ -287,8 +301,8 @@ export default function ProviderDetailsScreen() {
                   </View>
                   <TouchableOpacity
                     style={styles.desktopInstantBookAction}
-                    activeOpacity={1}
-                    disabled={true}
+                    onPress={() => handleBookAppointment()}
+                    activeOpacity={0.8}
                   >
                     <Ionicons name="calendar" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                     <Text style={styles.desktopInstantBookActionText}>Book Service Appointment</Text>
@@ -915,8 +929,8 @@ export default function ProviderDetailsScreen() {
 
             <TouchableOpacity
               style={styles.instantBookBtn}
-              activeOpacity={1}
-              disabled={true}
+              onPress={() => handleBookAppointment(true)}
+              activeOpacity={0.8}
             >
               <Ionicons name="flash" size={17} color="#FFFFFF" style={{ marginRight: 6, flexShrink: 0 }} />
               <Text style={styles.instantBookBtnText} numberOfLines={1}>Instant Book</Text>
@@ -930,16 +944,6 @@ export default function ProviderDetailsScreen() {
           onClose={() => setCertModalVisible(false)}
           license={selectedLicense}
           providerName={provider.name}
-        />
-
-        {/* Instant Booking Modal */}
-        <InstantBookModal
-          visible={bookModalVisible}
-          onClose={() => setBookModalVisible(false)}
-          provider={provider}
-          onSuccess={() => {
-            setBookModalVisible(false);
-          }}
         />
 
         {/* Direct Messaging Modal */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { createBooking } from '../services/bookingStore';
 
 export default function BookingConfirmationScreen() {
   const params = useLocalSearchParams<{
     status?: string; // 'paid' | 'confirmed'
+    bookingId?: string;
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    providerRate?: string;
+    serviceTitle?: string;
     paymentMethod?: string;
     cardLast4?: string;
     totalAmount?: string;
@@ -28,22 +35,78 @@ export default function BookingConfirmationScreen() {
     issueDescription?: string;
   }>();
 
+  const generatedBookingReferenceRef = useRef<string | null>(null);
+  const [generatedBookingReference, setGeneratedBookingReference] = useState<string | null>(null);
+  const [isBookingSaved, setIsBookingSaved] = useState(false);
   const isPaid = params.status === 'paid';
-  const bookingId = '#HF-89421';
+  const bookingReference = params.bookingId || generatedBookingReference || '';
+  const bookingId = bookingReference ? `#${bookingReference}` : '#HF-PENDING';
   const totalAmount = params.totalAmount || '2,320.00';
   const selectedDate = params.selectedDate || 'Thu, Oct 8, 2026';
   const selectedTime = params.selectedTime || '10:30 AM';
+  const providerName = params.providerName || 'Nimal Silva';
+  const providerTitle = params.providerTitle || 'Certified Senior Electrician';
+  const providerRate = params.providerRate || `LKR ${totalAmount}`;
+  const serviceTitle = params.serviceTitle || params.issueDescription?.trim() || 'Electrical Works';
   const paymentMethod = params.paymentMethod || (isPaid ? 'Credit / Debit Card' : 'Cash on Completion');
   const addressLine1 = params.addressLine1 || 'No 45/A, Temple Road, Colombo 03';
 
   // Tracking Steps Flow:
   // 1. Placed (Done) -> 2. On the Way (Active) -> 3. Work in Progress (Pending) -> 4. Completed (Pending)
-  const [currentStepIndex, setCurrentStepIndex] = useState(1); // 1 = "On the way"
+  const currentStepIndex = 1; // 1 = "On the way"
+
+  useEffect(() => {
+    const reference =
+      params.bookingId ||
+      generatedBookingReferenceRef.current ||
+      `HF-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    generatedBookingReferenceRef.current = reference;
+    if (!params.bookingId) {
+      setGeneratedBookingReference(reference);
+    }
+
+    createBooking({
+      id: reference,
+      createdAt: new Date().toISOString(),
+      status: 'upcoming',
+      serviceTitle,
+      providerName,
+      providerTitle,
+      scheduledDate: selectedDate,
+      scheduledTime: selectedTime,
+      address: [addressLine1, params.addressLine2].filter(Boolean).join(', '),
+      rate: providerRate,
+      paymentMethod,
+      notes: params.landmarkInstruction?.trim() || '',
+    })
+      .then(() => setIsBookingSaved(true))
+      .catch((error: unknown) => {
+        console.error('Unable to save the confirmed booking.', error);
+        Alert.alert(
+          'Booking could not be saved',
+          'Your confirmation is shown, but this booking could not be added to My Bookings. Please try again.'
+        );
+      });
+  }, [
+    addressLine1,
+    params.bookingId,
+    params.addressLine2,
+    params.issueDescription,
+    params.landmarkInstruction,
+    providerName,
+    providerRate,
+    providerTitle,
+    paymentMethod,
+    selectedDate,
+    selectedTime,
+    serviceTitle,
+    totalAmount,
+  ]);
 
   const trackingSteps = [
     {
       title: 'Booking Placed',
-      description: 'Request assigned & confirmed by Nimal Silva',
+      description: `Request assigned & confirmed by ${providerName}`,
       time: 'Just now',
       icon: 'checkmark-circle',
     },
@@ -77,19 +140,28 @@ export default function BookingConfirmationScreen() {
   const handleCallPro = () => {
     const phoneNumber = '+94771234567';
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
-      Alert.alert('Call Nimal Silva', `Dialing ${phoneNumber}...`);
+      Alert.alert(`Call ${providerName}`, `Dialing ${phoneNumber}...`);
     });
   };
 
   const handleMessagePro = () => {
-    Alert.alert('Message Nimal Silva', 'Opening direct in-app chat with professional...');
+    Alert.alert(`Message ${providerName}`, 'Opening direct in-app chat with professional...');
   };
 
   const handleTrackLive = () => {
-    Alert.alert(
-      '📍 Live GPS Tracking',
-      'Nimal Silva is approximately 3.1 km away on Marine Drive. Estimated arrival in 25 minutes.'
-    );
+    router.push({
+      pathname: '/track-professional',
+      params: {
+        bookingId,
+        providerName,
+        providerTitle,
+        selectedDate,
+        selectedTime,
+        addressLine1,
+        addressLine2: params.addressLine2 || '',
+        issueDescription: params.issueDescription || '',
+      },
+    });
   };
 
   return (
@@ -181,8 +253,8 @@ export default function BookingConfirmationScreen() {
                   <Ionicons name="star" size={12} color="#FBBF24" /> 4.8 (94)
                 </Text>
               </View>
-              <Text style={styles.proName}>Nimal Silva</Text>
-              <Text style={styles.proRole}>Certified Senior Electrician • 3.1 km away</Text>
+              <Text style={styles.proName}>{providerName}</Text>
+              <Text style={styles.proRole}>{providerTitle}</Text>
             </View>
           </View>
 
@@ -280,6 +352,11 @@ export default function BookingConfirmationScreen() {
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
+            <Ionicons name="construct-outline" size={16} color="#10B981" style={{ marginRight: 8 }} />
+            <Text style={styles.summaryLabel}>Service:</Text>
+            <Text style={styles.summaryValue}>{serviceTitle}</Text>
+          </View>
+          <View style={styles.summaryRow}>
             <Ionicons name="time-outline" size={16} color="#10B981" style={{ marginRight: 8 }} />
             <Text style={styles.summaryLabel}>Scheduled:</Text>
             <Text style={styles.summaryValue}>{selectedDate} at {selectedTime}</Text>
@@ -298,11 +375,15 @@ export default function BookingConfirmationScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.homeBtn}
-          onPress={() => router.replace('/(tabs)')}
+          style={[styles.homeBtn, !isBookingSaved && styles.homeBtnDisabled]}
+          onPress={() => router.replace('/(tabs)/bookings')}
+          disabled={!isBookingSaved}
           activeOpacity={0.7}
+          accessibilityState={{ disabled: !isBookingSaved }}
         >
-          <Text style={styles.homeBtnText}>Return to Home</Text>
+          <Text style={styles.homeBtnText}>
+            {isBookingSaved ? 'View My Bookings' : 'Saving Booking…'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -730,6 +811,9 @@ const styles = StyleSheet.create({
   homeBtn: {
     paddingVertical: 12,
     alignItems: 'center',
+  },
+  homeBtnDisabled: {
+    opacity: 0.6,
   },
   homeBtnText: {
     color: '#6B7280',

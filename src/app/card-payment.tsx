@@ -15,6 +15,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 export default function CardPaymentScreen() {
   const params = useLocalSearchParams<{
+    bookingId?: string;
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    providerRate?: string;
+    serviceTitle?: string;
+    instantBooking?: string;
     selectedDate?: string;
     selectedTime?: string;
     addressType?: string;
@@ -98,7 +105,9 @@ export default function CardPaymentScreen() {
         <View style={styles.amountBanner}>
           <View>
             <Text style={styles.amountBannerLabel}>Total Payable Amount</Text>
-            <Text style={styles.amountBannerSub}>Service: Electrical Works (Nimal Silva)</Text>
+            <Text style={styles.amountBannerSub}>
+              Service: {params.serviceTitle || 'Electrical Works'} ({params.providerName || 'Nimal Silva'})
+            </Text>
           </View>
           <Text style={styles.amountBannerPrice}>LKR {totalAmount}</Text>
         </View>

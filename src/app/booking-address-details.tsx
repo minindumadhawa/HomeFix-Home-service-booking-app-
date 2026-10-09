@@ -7,6 +7,12 @@ export default function BookingAddressDetailsScreen() {
   const params = useLocalSearchParams<{
     selectedDate?: string;
     selectedTime?: string;
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    providerRate?: string;
+    serviceTitle?: string;
+    instantBooking?: string;
   }>();
 
   const selectedDate = params.selectedDate || 'Thu, Oct 8';
@@ -236,6 +242,12 @@ export default function BookingAddressDetailsScreen() {
               params: {
                 selectedDate,
                 selectedTime,
+                providerId: params.providerId || '',
+                providerName: params.providerName || '',
+                providerTitle: params.providerTitle || '',
+                providerRate: params.providerRate || '',
+                serviceTitle: params.serviceTitle || '',
+                instantBooking: params.instantBooking || 'false',
                 addressType: selectedAddressType === 'New' ? 'Custom' : selectedAddressType,
                 addressLabel: currentAddress.label,
                 addressLine1: currentAddress.line1,
