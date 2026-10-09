@@ -78,7 +78,7 @@ export default function ServicesScreen() {
           </View>
           <View style={styles.urgentBannerBottom}>
             <View style={styles.standbyRow}>
-              <Ionicons name="checkmark-shield-outline" size={14} color="#10B981" />
+              <Ionicons name="shield-checkmark-outline" size={14} color="#10B981" />
               <Text style={styles.standbyText}>Dedicated SOS Unit on standby</Text>
             </View>
             <TouchableOpacity style={styles.instantReqBtn}>
