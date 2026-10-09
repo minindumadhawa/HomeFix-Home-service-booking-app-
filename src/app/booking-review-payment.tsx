@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,9 +13,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 export default function BookingReviewPaymentScreen() {
   const [selectedPayment, setSelectedPayment] = useState<'Cash' | 'Card' | 'KOKO' | 'LankaQR'>('Cash');
-  const [isBooked, setIsBooked] = useState(false);
 
   const params = useLocalSearchParams<{
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    providerRate?: string;
+    serviceTitle?: string;
+    instantBooking?: string;
     selectedDate?: string;
     selectedTime?: string;
     addressType?: string;
@@ -31,6 +35,10 @@ export default function BookingReviewPaymentScreen() {
 
   const selectedDate = params.selectedDate || 'Thu, Oct 8, 2026';
   const selectedTime = params.selectedTime || '10:30 AM';
+  const providerName = params.providerName || 'Nimal Silva';
+  const providerTitle = params.providerTitle || 'Certified Senior Electrician';
+  const providerRate = params.providerRate || 'LKR 1,800/hr';
+  const serviceTitle = params.serviceTitle || 'Electrical Works';
   const addressType = params.addressType || 'Home';
   const addressLine1 = params.addressLine1 || 'No 45/A, Temple Road';
   const addressLine2 = params.addressLine2 || 'Colombo 03, Western Province';
@@ -43,7 +51,8 @@ export default function BookingReviewPaymentScreen() {
     if (params.attachedPhotosJson) {
       attachedPhotos = JSON.parse(params.attachedPhotosJson);
     }
-  } catch (e) {
+  } catch (error) {
+    console.error('Unable to parse booking attachment details.', error);
     attachedPhotos = [];
   }
 
@@ -55,6 +64,13 @@ export default function BookingReviewPaymentScreen() {
 
   const handleConfirmAndBook = () => {
     const bookingPayload = {
+      bookingId: `HF-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      providerId: params.providerId || '',
+      providerName,
+      providerTitle,
+      providerRate,
+      serviceTitle,
+      instantBooking: params.instantBooking || 'false',
       selectedDate,
       selectedTime,
       addressType,
@@ -156,9 +172,9 @@ export default function BookingReviewPaymentScreen() {
                   <Text style={styles.proReviews}>(94 reviews)</Text>
                 </Text>
               </View>
-              <Text style={styles.proName}>Nimal Silva Electrical Works</Text>
+              <Text style={styles.proName}>{providerName} - {serviceTitle}</Text>
               <Text style={styles.proRate}>
-                Fixed Rate: LKR 1,800/hr <Text style={styles.proDot}>•</Text>
+                Rate: {providerRate} <Text style={styles.proDot}>•</Text>
               </Text>
               <Text style={styles.proDistance}>
                 <Ionicons name="location" size={12} color="#9CA3AF" /> 3.1 km away

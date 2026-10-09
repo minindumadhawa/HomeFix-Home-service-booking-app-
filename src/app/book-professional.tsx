@@ -1,9 +1,22 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 export default function BookProfessionalScreen() {
+  const params = useLocalSearchParams<{
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    providerRate?: string;
+    serviceTitle?: string;
+    instantBooking?: string;
+  }>();
+  const providerName = params.providerName || 'Nimal Silva';
+  const providerTitle = params.providerTitle || 'Certified Senior Electrician';
+  const providerRate = params.providerRate || 'LKR 1,800/hr';
+  const serviceTitle = params.serviceTitle || 'Electrical Works';
+
   // Dynamic date strip state
   const [datesList, setDatesList] = useState([
     { dayName: 'Today', dayNum: '7', month: 'Oct', fullDate: 'Wed, Oct 7', rawDay: 7 },
@@ -122,8 +135,8 @@ export default function BookProfessionalScreen() {
                   <Ionicons name="star" size={12} color="#FBBF24" /> 4.8 <Text style={styles.proReviews}>(94 reviews)</Text>
                 </Text>
               </View>
-              <Text style={styles.proName}>Nimal Silva Electrical Works</Text>
-              <Text style={styles.proRate}>Fixed Rate: Rs. 1,800/hr <Text style={styles.proDot}>•</Text></Text>
+              <Text style={styles.proName}>{providerName} - {serviceTitle}</Text>
+              <Text style={styles.proRate}>Rate: {providerRate} <Text style={styles.proDot}>•</Text></Text>
               <Text style={styles.proDistance}>
                 <Ionicons name="location" size={12} color="#9CA3AF" /> 3.1 km away
               </Text>
@@ -192,7 +205,7 @@ export default function BookProfessionalScreen() {
           <Text style={styles.summaryTitle}>Appointment Details</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Professional:</Text>
-            <Text style={styles.summaryValue}>Nimal Silva</Text>
+            <Text style={styles.summaryValue}>{providerName}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Selected Date:</Text>
@@ -213,6 +226,12 @@ export default function BookProfessionalScreen() {
             params: {
               selectedDate: getDisplayDate(),
               selectedTime: selectedTimeSlot,
+              providerId: params.providerId || '',
+              providerName,
+              providerTitle,
+              providerRate,
+              serviceTitle,
+              instantBooking: params.instantBooking || 'false',
             },
           })}
         >
