@@ -65,7 +65,7 @@ export default function BookingsScreen() {
           <View style={styles.emptyState}>
             <Ionicons name="receipt-outline" size={60} color="#D1D5DB" />
             <Text style={styles.emptyStateTitle}>No past bookings</Text>
-            <Text style={styles.emptyStateSub}>You haven't completed any services yet.</Text>
+            <Text style={styles.emptyStateSub}>{"You haven't completed any services yet."}</Text>
           </View>
         )}
 
