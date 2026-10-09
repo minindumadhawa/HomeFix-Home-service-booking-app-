@@ -213,10 +213,7 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.bookNowProBtn}
-            onPress={() => router.push('/provider/nimal-silva' as any)}
-          >
+          <TouchableOpacity style={styles.bookNowProBtn} onPress={() => router.push('/book-professional')}>
             <Text style={styles.bookNowProText}>BOOK NOW</Text>
             <Ionicons name="arrow-forward" size={16} color="#FFF" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
