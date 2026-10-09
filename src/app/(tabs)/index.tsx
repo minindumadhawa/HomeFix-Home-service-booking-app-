@@ -69,7 +69,7 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.emergencyTitle}>Instant Emergency Technician Dispatch</Text>
           <Text style={styles.emergencySubtitle}>Get a certified worker at your doorstep in under 15 minutes.</Text>
-          <TouchableOpacity style={styles.requestNowBtn}>
+          <TouchableOpacity style={styles.requestNowBtn} onPress={() => router.push('/provider/gamage-wdk' as any)}>
             <Text style={styles.requestNowText}>REQUEST NOW</Text>
             <Ionicons name="arrow-forward" size={16} color="#FFF" style={{marginLeft: 4}} />
           </TouchableOpacity>
@@ -78,18 +78,22 @@ export default function HomeScreen() {
         {/* Service Categories */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>SERVICE CATEGORIES</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/services')}>
             <Text style={styles.seeAllText}>View All</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.categoriesGrid}>
           {[
-            { id: 1, name: 'Plumbing\nServices', icon: 'build-outline' },
-            { id: 2, name: 'Electrical\nRepairs', icon: 'flash-outline' },
-            { id: 3, name: 'Home\nCleaning', icon: 'sparkles-outline' },
-            { id: 4, name: 'Painting &\nCarpentry', icon: 'color-palette-outline' },
+            { id: 1, name: 'Plumbing\nServices', icon: 'build-outline', route: '/provider/gamage-wdk' },
+            { id: 2, name: 'Electrical\nRepairs', icon: 'flash-outline', route: '/provider/nimal-silva' },
+            { id: 3, name: 'Home\nCleaning', icon: 'sparkles-outline', route: '/(tabs)/services' },
+            { id: 4, name: 'Painting &\nCarpentry', icon: 'color-palette-outline', route: '/(tabs)/services' },
           ].map((cat) => (
-            <TouchableOpacity key={cat.id} style={styles.categoryCard}>
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.categoryCard}
+              onPress={() => router.push(cat.route as any)}
+            >
               <View style={styles.categoryIconContainer}>
                 <Ionicons name={cat.icon as any} size={24} color="#10B981" />
               </View>
@@ -144,11 +148,53 @@ export default function HomeScreen() {
           </View>
         </View>
         
-        <View style={styles.proCard}>
+        {/* Pro Card 1: Gamage W.D.K. */}
+        <TouchableOpacity
+          style={styles.proCard}
+          onPress={() => router.push('/provider/gamage-wdk' as any)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.proCardHeader}>
+            <View style={[styles.proAvatarContainer, { overflow: 'hidden' }]}>
+              <Ionicons name="construct" size={28} color="#10B981" />
+              <Text style={[styles.proPhotoText, { color: '#10B981' }]}>MASTER</Text>
+            </View>
+            <View style={styles.proInfo}>
+              <View style={styles.proBadgesRow}>
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="checkmark" size={12} color="#FFF" />
+                  <Text style={styles.verifiedText}>VERIFIED PRO</Text>
+                </View>
+                <Text style={styles.proRating}>
+                  <Ionicons name="star" size={12} color="#F59E0B" /> 4.9 <Text style={styles.proReviews}>(128 reviews)</Text>
+                </Text>
+              </View>
+              <Text style={styles.proName}>Gamage W.D.K. - Pipe Specialist</Text>
+              <Text style={styles.proRate}>Starting: $40/hr <Text style={styles.proDot}>•</Text> NVQ Level 4</Text>
+              <Text style={styles.proDistance}>
+                <Ionicons name="location" size={12} color="#9CA3AF" /> Colombo & Western Province
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.bookNowProBtn}
+            onPress={() => router.push('/provider/gamage-wdk' as any)}
+          >
+            <Text style={styles.bookNowProText}>VIEW CREDENTIALS & BOOK</Text>
+            <Ionicons name="arrow-forward" size={16} color="#FFF" style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        {/* Pro Card 2: Nimal Silva */}
+        <TouchableOpacity
+          style={styles.proCard}
+          onPress={() => router.push('/provider/nimal-silva' as any)}
+          activeOpacity={0.9}
+        >
           <View style={styles.proCardHeader}>
             <View style={styles.proAvatarContainer}>
-              <Ionicons name="person" size={30} color="#9CA3AF" />
-              <Text style={styles.proPhotoText}>PRO PHOTO</Text>
+              <Ionicons name="flash" size={28} color="#9CA3AF" />
+              <Text style={styles.proPhotoText}>ELECTRIC</Text>
             </View>
             <View style={styles.proInfo}>
               <View style={styles.proBadgesRow}>
@@ -169,9 +215,9 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity style={styles.bookNowProBtn} onPress={() => router.push('/book-professional')}>
             <Text style={styles.bookNowProText}>BOOK NOW</Text>
-            <Ionicons name="arrow-forward" size={16} color="#FFF" style={{marginLeft: 4}} />
+            <Ionicons name="arrow-forward" size={16} color="#FFF" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
