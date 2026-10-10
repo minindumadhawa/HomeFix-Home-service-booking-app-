@@ -102,7 +102,7 @@ export default function ProfileScreen() {
               <View style={styles.settingsCard}>
                 <SettingItem icon="wallet-outline" title="Bank Account & Payouts" />
                 <SettingItem icon="calendar-outline" title="Availability Schedule" />
-                <SettingItem icon="construct-outline" title="Manage Services & Rates" onPress={() => router.push('/manage-services')} />
+                <SettingItem icon="construct-outline" title="Manage Services & Rates" />
                 <SettingItem icon="document-text-outline" title="Verification Documents" isLast />
               </View>
             </View>
