@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { getProviderById, DEFAULT_PROVIDERS } from '../../services/providerService';
 import { ServiceProvider, ProfessionalLicense } from '../../types/provider';
 import CertificateModal from '../../components/provider/CertificateModal';
@@ -44,31 +44,33 @@ export default function ProviderDetailsScreen() {
   // Helpful counts state mapped by review ID
   const [helpfulVotes, setHelpfulVotes] = useState<Record<string, { count: number; voted: boolean }>>({});
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadData() {
-      setLoading(true);
-      const targetId = id ? String(id) : 'gamage-wdk';
-      const data = await getProviderById(targetId);
-      if (isMounted) {
-        const finalProvider = data || DEFAULT_PROVIDERS['gamage-wdk'];
-        setProvider(finalProvider);
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+      async function loadData() {
+        setLoading(true);
+        const targetId = id ? String(id) : 'gamage-wdk';
+        const data = await getProviderById(targetId);
+        if (isMounted) {
+          const finalProvider = data || DEFAULT_PROVIDERS['gamage-wdk'];
+          setProvider(finalProvider);
 
-        // Initialize helpful votes
-        const initialVotes: Record<string, { count: number; voted: boolean }> = {};
-        finalProvider.reviews.forEach((r) => {
-          initialVotes[r.id] = { count: r.helpfulCount, voted: false };
-        });
-        setHelpfulVotes(initialVotes);
+          // Initialize helpful votes
+          const initialVotes: Record<string, { count: number; voted: boolean }> = {};
+          finalProvider.reviews.forEach((r) => {
+            initialVotes[r.id] = { count: r.helpfulCount, voted: false };
+          });
+          setHelpfulVotes(initialVotes);
 
-        setLoading(false);
+          setLoading(false);
+        }
       }
-    }
-    loadData();
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
+      loadData();
+      return () => {
+        isMounted = false;
+      };
+    }, [id])
+  );
 
   const handleShare = async () => {
     if (!provider) return;
@@ -155,6 +157,14 @@ export default function ProviderDetailsScreen() {
           <View style={styles.topBarRight}>
             <TouchableOpacity
               style={styles.circleBtn}
+              onPress={() => router.push(`/manage-services?providerId=${provider.id}`)}
+              accessibilityLabel="Edit Services & Rates"
+            >
+              <Ionicons name="pencil" size={18} color="#10B981" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.circleBtn, { marginLeft: 10 }]}
               onPress={() => setIsSaved(!isSaved)}
               accessibilityLabel="Bookmark provider"
             >
