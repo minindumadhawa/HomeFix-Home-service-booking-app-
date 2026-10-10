@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../config/firebase';
@@ -9,27 +9,31 @@ import { auth, db } from '../../config/firebase';
 export default function ProfileScreen() {
   const [role, setRole] = useState('customer');
   const [phone, setPhone] = useState('+94 77 123 4567');
+  const [name, setName] = useState('John Doe');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (auth.currentUser) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            if (data.role) setRole(data.role);
-            if (data.phone) setPhone(data.phone);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        if (auth.currentUser) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              if (data.role) setRole(data.role);
+              if (data.phone) setPhone(data.phone);
+              if (data.name) setName(data.name);
+            }
+          } catch (error) {
+            console.warn("Could not fetch user profile", error);
           }
-        } catch (error) {
-          console.warn("Could not fetch user profile", error);
         }
-      }
-      setLoading(false);
-    };
+        setLoading(false);
+      };
 
-    fetchUserData();
-  }, []);
+      fetchUserData();
+    }, [])
+  );
 
   const handleLogout = async () => {
     try {
@@ -56,13 +60,13 @@ export default function ProfileScreen() {
         {/* Header Profile Info */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarInitials}>JD</Text>
-            <View style={styles.editAvatarBadge}>
-              <Ionicons name="camera" size={14} color="#FFF" />
-            </View>
+            <Text style={styles.avatarInitials}>{name.substring(0, 2).toUpperCase()}</Text>
+            <TouchableOpacity style={styles.editAvatarBadge} onPress={() => router.push('/edit-profile')}>
+              <Ionicons name="pencil" size={14} color="#FFF" />
+            </TouchableOpacity>
           </View>
           <View style={styles.nameRow}>
-            <Text style={styles.userName}>John Doe</Text>
+            <Text style={styles.userName}>{name}</Text>
             {isProvider && <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{marginLeft: 4}} />}
           </View>
           <Text style={styles.userPhone}>{phone}</Text>
@@ -108,6 +112,7 @@ export default function ProfileScreen() {
             <View style={styles.settingsGroup}>
               <Text style={styles.groupTitle}>ACCOUNT SETTINGS</Text>
               <View style={styles.settingsCard}>
+                <SettingItem icon="person-outline" title="Edit Profile" onPress={() => router.push('/edit-profile')} />
                 <SettingItem icon="location-outline" title="Manage Addresses" />
                 <SettingItem icon="card-outline" title="Payment Methods" />
                 <SettingItem icon="notifications-outline" title="Notifications" />
@@ -137,9 +142,9 @@ export default function ProfileScreen() {
   );
 }
 
-function SettingItem({ icon, title, isLast }: any) {
+function SettingItem({ icon, title, isLast, onPress }: any) {
   return (
-    <TouchableOpacity style={[styles.settingItem, !isLast && styles.settingItemBorder]}>
+    <TouchableOpacity style={[styles.settingItem, !isLast && styles.settingItemBorder]} onPress={onPress}>
       <View style={styles.settingItemLeft}>
         <Ionicons name={icon} size={22} color="#4B5563" style={styles.settingIcon} />
         <Text style={styles.settingTitle}>{title}</Text>

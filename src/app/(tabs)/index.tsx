@@ -69,7 +69,7 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.emergencyTitle}>Instant Emergency Technician Dispatch</Text>
           <Text style={styles.emergencySubtitle}>Get a certified worker at your doorstep in under 15 minutes.</Text>
-          <TouchableOpacity style={styles.requestNowBtn} onPress={() => router.push('/provider/gamage-wdk' as any)}>
+          <TouchableOpacity style={styles.requestNowBtn} onPress={() => router.push('/book-professional')}>
             <Text style={styles.requestNowText}>REQUEST NOW</Text>
             <Ionicons name="arrow-forward" size={16} color="#FFF" style={{marginLeft: 4}} />
           </TouchableOpacity>

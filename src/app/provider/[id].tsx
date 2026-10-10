@@ -185,8 +185,7 @@ export default function ProviderDetailsScreen() {
 
                 <TouchableOpacity
                   style={styles.desktopHeaderBookBtn}
-                  activeOpacity={1}
-                  disabled={true}
+                  onPress={() => router.push('/book-professional')}
                 >
                   <Ionicons name="flash" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                   <Text style={styles.desktopHeaderBookText}>Instant Book</Text>
@@ -287,8 +286,7 @@ export default function ProviderDetailsScreen() {
                   </View>
                   <TouchableOpacity
                     style={styles.desktopInstantBookAction}
-                    activeOpacity={1}
-                    disabled={true}
+                    onPress={() => router.push('/book-professional')}
                   >
                     <Ionicons name="calendar" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                     <Text style={styles.desktopInstantBookActionText}>Book Service Appointment</Text>
@@ -915,8 +913,7 @@ export default function ProviderDetailsScreen() {
 
             <TouchableOpacity
               style={styles.instantBookBtn}
-              activeOpacity={1}
-              disabled={true}
+              onPress={() => router.push('/book-professional')}
             >
               <Ionicons name="flash" size={17} color="#FFFFFF" style={{ marginRight: 6, flexShrink: 0 }} />
               <Text style={styles.instantBookBtnText} numberOfLines={1}>Instant Book</Text>
