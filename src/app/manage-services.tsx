@@ -12,6 +12,8 @@ export default function ManageServicesScreen() {
   const [standardRate, setStandardRate] = useState('');
   const [standardUnit, setStandardUnit] = useState('/hr');
   const [standardNote, setStandardNote] = useState('');
+  const [jobRole, setJobRole] = useState('');
+  const [showRolePicker, setShowRolePicker] = useState(false);
   const [diagnosticRate, setDiagnosticRate] = useState('');
   const [diagnosticNote, setDiagnosticNote] = useState('');
   const [emergencyRate, setEmergencyRate] = useState('');
@@ -35,6 +37,7 @@ export default function ManageServicesScreen() {
           if (userDoc.exists()) {
             const data = userDoc.data();
             setAbout(data.about || '');
+            setJobRole(data.jobRole || '');
             setSkills(Array.isArray(data.skills) ? data.skills.join(', ') : (data.skills || ''));
             
             if (data.rates) {
@@ -65,6 +68,7 @@ export default function ManageServicesScreen() {
       const skillsArray = skills.split(',').map(s => s.trim()).filter(s => s);
       
       const payload = {
+        jobRole,
         about,
         skills: skillsArray,
         rates: {
@@ -114,6 +118,20 @@ export default function ManageServicesScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Profile Details</Text>
           
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Job Role</Text>
+            <TouchableOpacity 
+              style={styles.inputContainer} 
+              onPress={() => setShowRolePicker(true)}
+            >
+              <Ionicons name="briefcase-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+              <Text style={[styles.input, { marginTop: 15, color: jobRole ? '#111827' : '#9CA3AF' }]}>
+                {jobRole || 'Select your main job role (e.g. Electrician)'}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>About / Description</Text>
             <View style={[styles.inputContainer, styles.textAreaContainer]}>
@@ -263,6 +281,53 @@ export default function ManageServicesScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Role Picker Modal */}
+      {showRolePicker && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Job Role</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {[
+                'Electrician', 
+                'Plumber', 
+                'Carpenter', 
+                'Cleaner', 
+                'Painter', 
+                'HVAC Technician', 
+                'Handyman', 
+                'Mason', 
+                'Gardener', 
+                'Pest Control', 
+                'Appliance Repair'
+              ].map((role) => (
+                <TouchableOpacity 
+                  key={role} 
+                  style={styles.roleOption}
+                  onPress={() => {
+                    setJobRole(role);
+                    setShowRolePicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.roleOptionText,
+                    jobRole === role && styles.roleOptionTextSelected
+                  ]}>{role}</Text>
+                  {jobRole === role && (
+                    <Ionicons name="checkmark" size={20} color="#10B981" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity 
+              style={styles.modalCloseButton}
+              onPress={() => setShowRolePicker(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -372,5 +437,54 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  roleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  roleOptionText: {
+    fontSize: 16,
+    color: '#4B5563',
+  },
+  roleOptionTextSelected: {
+    color: '#10B981',
+    fontWeight: 'bold',
+  },
+  modalCloseButton: {
+    marginTop: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4B5563',
   },
 });
