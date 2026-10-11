@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
@@ -50,8 +50,7 @@ export default function AdminDashboardScreen() {
   const [isRoleModalVisible, setIsRoleModalVisible] = useState(false);
   const [updatingRole, setUpdatingRole] = useState(false);
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async () => {
     try {
       // 1. Fetch all users from Firestore
       const usersSnap = await getDocs(collection(db, 'users'));
@@ -86,11 +85,13 @@ export default function AdminDashboardScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   const handleRefresh = () => {
     setIsRefreshing(true);
