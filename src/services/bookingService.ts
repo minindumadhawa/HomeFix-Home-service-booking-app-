@@ -234,6 +234,17 @@ export async function completeBooking(id: string): Promise<boolean> {
 }
 
 /**
+ * SUBMIT RATING and REVIEW for a completed booking
+ */
+export async function rateBooking(id: string, rating: number, review?: string): Promise<boolean> {
+  return updateBooking(id, {
+    rating,
+    review: review?.trim() || '',
+    ratedAt: new Date().toISOString(),
+  });
+}
+
+/**
  * DELETE a booking record completely from database and local storage
  */
 export async function deleteBooking(id: string): Promise<boolean> {

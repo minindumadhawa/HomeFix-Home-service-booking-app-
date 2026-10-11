@@ -26,6 +26,9 @@ export interface Booking {
   landmarkInstruction?: string;
   issueDescription?: string;
   attachedPhotos?: string[];
+  rating?: number;
+  review?: string;
+  ratedAt?: string;
   createdAt: string;
   updatedAt?: string;
 }

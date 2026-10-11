@@ -13,6 +13,8 @@ import {
   Modal,
   TextInput,
   Linking,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -21,6 +23,7 @@ import {
   rescheduleBooking,
   cancelBooking,
   completeBooking,
+  rateBooking,
   deleteBooking,
 } from '../../services/bookingService';
 import { Booking, BookingStatus } from '../../types/booking';
@@ -54,6 +57,12 @@ export default function BookingsScreen() {
   const [selectedRescheduleDate, setSelectedRescheduleDate] = useState(RESCHEDULE_DATES[1].dateStr);
   const [selectedRescheduleTime, setSelectedRescheduleTime] = useState(TIME_SLOTS[1]);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Rating Modal state
+  const [ratingModalBooking, setRatingModalBooking] = useState<Booking | null>(null);
+  const [selectedRating, setSelectedRating] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [isSubmittingRating, setIsSubmittingRating] = useState<boolean>(false);
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -123,9 +132,15 @@ export default function BookingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Immediately update state and tab so user sees it right away
+              setBookings((prev) =>
+                prev.map((b) => (b.id === booking.id ? { ...b, status: 'Cancelled' as BookingStatus } : b))
+              );
+              setActiveTab('Cancelled');
+
               await cancelBooking(booking.id, 'Cancelled by user');
               await fetchBookings();
-              Alert.alert('Cancelled', 'Your booking has been cancelled.');
+              Alert.alert('Booking Cancelled', 'Your booking has been cancelled and moved to the Cancelled tab.');
             } catch (err) {
               Alert.alert('Error', 'Could not cancel booking.');
             }
@@ -135,20 +150,75 @@ export default function BookingsScreen() {
     );
   };
 
+  // Rating & Review Actions
+  const handleOpenRating = (booking: Booking) => {
+    setRatingModalBooking(booking);
+    setSelectedRating(booking.rating || 5);
+    setReviewComment(booking.review || '');
+  };
+
+  const handleSubmitRating = async () => {
+    if (!ratingModalBooking) return;
+    setIsSubmittingRating(true);
+    try {
+      await rateBooking(ratingModalBooking.id, selectedRating, reviewComment);
+      
+      // Update state locally
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === ratingModalBooking.id
+            ? { ...b, rating: selectedRating, review: reviewComment.trim(), ratedAt: new Date().toISOString() }
+            : b
+        )
+      );
+
+      Alert.alert(
+        'Review Submitted! ⭐',
+        `Thank you for rating ${ratingModalBooking.providerName} with ${selectedRating} stars.`
+      );
+      setRatingModalBooking(null);
+      setReviewComment('');
+      await fetchBookings();
+    } catch (err) {
+      console.error('Error submitting rating:', err);
+      Alert.alert('Error', 'Could not save your rating. Please try again.');
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
+
   // CRUD: Mark Booking Completed (Update status to Completed)
   const handleCompleteBooking = (booking: Booking) => {
     Alert.alert(
-      'Mark as Completed?',
+      'Mark as Done / Completed?',
       'Has the service been successfully performed by the professional?',
       [
         { text: 'Not yet', style: 'cancel' },
         {
-          text: 'Yes, Completed',
+          text: 'Yes, Done',
           onPress: async () => {
             try {
+              // Immediately update state and tab so user sees it right away
+              setBookings((prev) =>
+                prev.map((b) => (b.id === booking.id ? { ...b, status: 'Completed' as BookingStatus, paymentStatus: 'Paid' } : b))
+              );
+              setActiveTab('Completed');
+
               await completeBooking(booking.id);
               await fetchBookings();
-              Alert.alert('Service Completed', 'Thank you! The booking is now in your Completed history.');
+              
+              // Prompt for review after completing
+              Alert.alert(
+                'Service Completed 🎉',
+                'Would you like to rate your experience with this professional?',
+                [
+                  { text: 'Later', style: 'cancel' },
+                  {
+                    text: 'Rate Now ⭐',
+                    onPress: () => handleOpenRating(booking),
+                  },
+                ]
+              );
             } catch (err) {
               Alert.alert('Error', 'Could not update booking.');
             }
@@ -424,6 +494,28 @@ export default function BookingsScreen() {
 
                   {isCompleted && (
                     <>
+                      {booking.rating ? (
+                        <TouchableOpacity
+                          style={[styles.actionBtnOutline, { borderColor: '#F59E0B', backgroundColor: '#FFFBEB' }]}
+                          onPress={() => handleOpenRating(booking)}
+                        >
+                          <Ionicons name="star" size={14} color="#D97706" style={{ marginRight: 4 }} />
+                          <Text style={[styles.actionBtnText, { color: '#B45309', fontWeight: 'bold' }]}>
+                            {booking.rating} ★ Rated
+                          </Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity
+                          style={[styles.actionBtnOutline, { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}
+                          onPress={() => handleOpenRating(booking)}
+                        >
+                          <Ionicons name="star-outline" size={14} color="#059669" style={{ marginRight: 4 }} />
+                          <Text style={[styles.actionBtnText, { color: '#059669', fontWeight: 'bold' }]}>
+                            Rate Pro
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+
                       <TouchableOpacity
                         style={styles.actionBtnPrimary}
                         onPress={() => router.push('/(tabs)/services')}
@@ -693,9 +785,76 @@ export default function BookingsScreen() {
                   </View>
                 </View>
 
+                {/* Rating display in details if already rated */}
+                {selectedBookingForDetails.rating && (
+                  <View style={styles.detailsSection}>
+                    <Text style={styles.detailsSectionTitle}>YOUR RATING & REVIEW</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Ionicons
+                          key={star}
+                          name={star <= (selectedBookingForDetails.rating || 0) ? 'star' : 'star-outline'}
+                          size={18}
+                          color="#F59E0B"
+                          style={{ marginRight: 2 }}
+                        />
+                      ))}
+                      <Text style={{ marginLeft: 6, fontWeight: 'bold', color: '#B45309', fontSize: 13 }}>
+                        {selectedBookingForDetails.rating} / 5 Stars
+                      </Text>
+                    </View>
+                    {selectedBookingForDetails.review ? (
+                      <Text style={{ fontSize: 13, color: '#4B5563', fontStyle: 'italic', marginTop: 4 }}>
+                        "{selectedBookingForDetails.review}"
+                      </Text>
+                    ) : null}
+                  </View>
+                )}
+
+                {/* If completed but not yet rated, show Rate Pro button in details */}
+                {selectedBookingForDetails.status === 'Completed' && !selectedBookingForDetails.rating && (
+                  <TouchableOpacity
+                    style={[styles.detailsCloseBtn, { backgroundColor: '#ECFDF5', borderColor: '#10B981', borderWidth: 1, marginTop: 14 }]}
+                    onPress={() => {
+                      const b = selectedBookingForDetails;
+                      setSelectedBookingForDetails(null);
+                      handleOpenRating(b);
+                    }}
+                  >
+                    <Text style={[styles.detailsCloseBtnText, { color: '#059669' }]}>⭐ Rate & Review Specialist</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Modal Action Buttons if booking is Upcoming */}
+                {selectedBookingForDetails.status === 'Upcoming' && (
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+                    <TouchableOpacity
+                      style={[styles.detailsCloseBtn, { flex: 1, backgroundColor: '#ECFDF5', borderColor: '#10B981', borderWidth: 1 }]}
+                      onPress={() => {
+                        const b = selectedBookingForDetails;
+                        setSelectedBookingForDetails(null);
+                        handleCompleteBooking(b);
+                      }}
+                    >
+                      <Text style={[styles.detailsCloseBtnText, { color: '#059669' }]}>✓ Mark as Done</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.detailsCloseBtn, { flex: 1, backgroundColor: '#FEF2F2', borderColor: '#EF4444', borderWidth: 1 }]}
+                      onPress={() => {
+                        const b = selectedBookingForDetails;
+                        setSelectedBookingForDetails(null);
+                        handleCancelBooking(b);
+                      }}
+                    >
+                      <Text style={[styles.detailsCloseBtnText, { color: '#DC2626' }]}>✕ Cancel Booking</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
                 {/* Bottom Close Button */}
                 <TouchableOpacity
-                  style={styles.detailsCloseBtn}
+                  style={[styles.detailsCloseBtn, { marginTop: 14 }]}
                   onPress={() => setSelectedBookingForDetails(null)}
                 >
                   <Text style={styles.detailsCloseBtnText}>Close Details</Text>
@@ -704,6 +863,115 @@ export default function BookingsScreen() {
             )}
           </View>
         </View>
+      </Modal>
+
+      {/* RATING & REVIEW MODAL */}
+      <Modal
+        visible={!!ratingModalBooking}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setRatingModalBooking(null)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          {/* Backdrop */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setRatingModalBooking(null)}
+          />
+
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>Rate Your Specialist</Text>
+                <Text style={styles.modalSubtitle}>
+                  {ratingModalBooking?.providerName} • {ratingModalBooking?.serviceTitle}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setRatingModalBooking(null)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={22} color="#111827" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 12 }}>
+                How satisfied were you with the quality of service provided?
+              </Text>
+
+              {/* Star Rating Selector */}
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setSelectedRating(star)}
+                    style={{ padding: 6 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={star <= selectedRating ? 'star' : 'star-outline'}
+                      size={36}
+                      color={star <= selectedRating ? '#F59E0B' : '#D1D5DB'}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={{ textAlign: 'center', fontWeight: 'bold', color: '#111827', marginBottom: 16 }}>
+                {selectedRating === 5
+                  ? '⭐⭐⭐⭐⭐ Exceptional Service'
+                  : selectedRating === 4
+                  ? '⭐⭐⭐⭐ Great Experience'
+                  : selectedRating === 3
+                  ? '⭐⭐⭐ Average'
+                  : selectedRating === 2
+                  ? '⭐⭐ Needs Improvement'
+                  : '⭐ Poor Experience'}
+              </Text>
+
+              {/* Review Text Input */}
+              <Text style={styles.pickerSectionTitle}>WRITE A REVIEW (OPTIONAL)</Text>
+              <TextInput
+                style={{
+                  backgroundColor: '#F9FAFB',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#E5E7EB',
+                  padding: 12,
+                  fontSize: 13,
+                  color: '#111827',
+                  height: 90,
+                  textAlignVertical: 'top',
+                  marginBottom: 16,
+                }}
+                placeholder="Share helpful feedback about punctuality, skill, or friendliness..."
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                value={reviewComment}
+                onChangeText={setReviewComment}
+              />
+
+              {/* Submit Review Button */}
+              <TouchableOpacity
+                style={[styles.confirmRescheduleBtn, { backgroundColor: '#10B981' }]}
+                onPress={handleSubmitRating}
+                disabled={isSubmittingRating}
+              >
+                {isSubmittingRating ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <>
+                    <Ionicons name="star" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.confirmRescheduleBtnText}>Submit Rating</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

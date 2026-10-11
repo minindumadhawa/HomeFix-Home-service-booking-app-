@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
@@ -95,6 +96,42 @@ export default function SupportScreen() {
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchTickets();
+  };
+
+  const handleContactChannel = async (channelLabel: string) => {
+    const supportPhone = '+94771234567';
+    const whatsappNumber = '94771234567';
+
+    if (channelLabel === 'Call Agent') {
+      const telUrl = `tel:${supportPhone}`;
+      const supported = await Linking.canOpenURL(telUrl).catch(() => false);
+      if (supported) {
+        Linking.openURL(telUrl);
+      } else {
+        Alert.alert('Customer Care Line', `Dial our 24/7 hotline directly: ${supportPhone}`, [
+          { text: 'Copy Number', onPress: () => Alert.alert('Hotline', supportPhone) },
+          { text: 'OK' },
+        ]);
+      }
+    } else if (channelLabel === 'WhatsApp') {
+      const message = encodeURIComponent(
+        'Hello HomeFix Support, I need assistance regarding a booking / service warranty.'
+      );
+      const whatsappUrl = `whatsapp://send?phone=${whatsappNumber}&text=${message}`;
+      const webUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+
+      const supported = await Linking.canOpenURL(whatsappUrl).catch(() => false);
+      if (supported) {
+        Linking.openURL(whatsappUrl);
+      } else {
+        Linking.openURL(webUrl).catch(() => {
+          Alert.alert('WhatsApp Helpdesk', `Please message our verified WhatsApp line at +${whatsappNumber}`);
+        });
+      }
+    } else {
+      // Chat Support: Open instant support ticket modal
+      handleOpenCreateModal('Chat Support / Inquiry');
+    }
   };
 
   const handleOpenCreateModal = (prefilledTopic?: string) => {
@@ -360,7 +397,8 @@ export default function SupportScreen() {
                 <TouchableOpacity
                   key={channel.label}
                   style={styles.channelButton}
-                  onPress={() => handleOpenCreateModal(channel.label)}
+                  onPress={() => handleContactChannel(channel.label)}
+                  activeOpacity={0.7}
                 >
                   <View style={[styles.channelIcon, { backgroundColor: `${channel.color}20` }]}>
                     <Ionicons name={channel.icon as any} size={18} color={channel.color} />
