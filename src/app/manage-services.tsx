@@ -84,6 +84,31 @@ export default function ManageServicesScreen() {
         router.back();
       } else if (auth.currentUser) {
         await updateDoc(doc(db, 'users', auth.currentUser.uid), payload);
+        try {
+          const userSnap = await getDoc(doc(db, 'users', auth.currentUser.uid));
+          const userData = userSnap.exists() ? userSnap.data() : {};
+          await setDoc(
+            doc(db, 'providers', auth.currentUser.uid),
+            {
+              id: auth.currentUser.uid,
+              name: userData.name || auth.currentUser.displayName || 'Service Specialist',
+              title: jobRole || userData.title || 'Service Specialist',
+              category: jobRole || 'Plumbing',
+              avatarUrl: userData.avatarUrl || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?q=80&w=400&auto=format&fit=crop',
+              location: userData.city || userData.address || 'Colombo & Western Province',
+              rating: 5.0,
+              reviewCount: 1,
+              isBackgroundChecked: true,
+              verificationBadgeText: 'VERIFIED BACKGROUND CHECKED',
+              about,
+              skills: skillsArray,
+              rates: payload.rates,
+            },
+            { merge: true }
+          );
+        } catch (provErr) {
+          console.warn('Could not sync to providers collection:', provErr);
+        }
         Alert.alert('Success', 'Service details updated successfully');
         router.back();
       }

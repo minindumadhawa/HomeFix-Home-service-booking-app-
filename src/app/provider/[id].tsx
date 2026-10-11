@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
-import { getProviderById, DEFAULT_PROVIDERS } from '../../services/providerService';
+import { getProviderById } from '../../services/providerService';
 import { ServiceProvider, ProfessionalLicense } from '../../types/provider';
 import CertificateModal from '../../components/provider/CertificateModal';
 import InstantBookModal from '../../components/provider/InstantBookModal';
@@ -49,18 +49,22 @@ export default function ProviderDetailsScreen() {
       let isMounted = true;
       async function loadData() {
         setLoading(true);
-        const targetId = id ? String(id) : 'gamage-wdk';
-        const data = await getProviderById(targetId);
+        if (!id) {
+          setProvider(null);
+          setLoading(false);
+          return;
+        }
+        const data = await getProviderById(String(id));
         if (isMounted) {
-          const finalProvider = data || DEFAULT_PROVIDERS['gamage-wdk'];
-          setProvider(finalProvider);
+          setProvider(data);
 
-          // Initialize helpful votes
-          const initialVotes: Record<string, { count: number; voted: boolean }> = {};
-          finalProvider.reviews.forEach((r) => {
-            initialVotes[r.id] = { count: r.helpfulCount, voted: false };
-          });
-          setHelpfulVotes(initialVotes);
+          if (data && data.reviews) {
+            const initialVotes: Record<string, { count: number; voted: boolean }> = {};
+            data.reviews.forEach((r) => {
+              initialVotes[r.id] = { count: r.helpfulCount || 0, voted: false };
+            });
+            setHelpfulVotes(initialVotes);
+          }
 
           setLoading(false);
         }
@@ -108,11 +112,31 @@ export default function ProviderDetailsScreen() {
     setCertModalVisible(true);
   };
 
-  if (loading || !provider) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#10B981" />
         <Text style={styles.loadingText}>Loading verified credentials...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!provider) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <Ionicons name="alert-circle-outline" size={54} color="#9CA3AF" />
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#111827', marginTop: 14 }}>
+          Service Provider Not Found
+        </Text>
+        <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 6, textAlign: 'center', paddingHorizontal: 32 }}>
+          This service provider is not registered in the database.
+        </Text>
+        <TouchableOpacity
+          style={{ marginTop: 20, backgroundColor: '#10B981', paddingHorizontal: 22, paddingVertical: 10, borderRadius: 20 }}
+          onPress={() => router.back()}
+        >
+          <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 13 }}>Go Back</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }

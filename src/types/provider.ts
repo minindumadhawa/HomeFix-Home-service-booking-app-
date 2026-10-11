@@ -113,6 +113,7 @@ export interface ServiceProvider {
   id: string;
   name: string;
   title: string;
+  category?: string;
   avatarUrl: string;
   rating: number;
   reviewCount: number;
