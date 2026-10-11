@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../config/firebase';
@@ -9,27 +9,31 @@ import { auth, db } from '../../config/firebase';
 export default function ProfileScreen() {
   const [role, setRole] = useState('customer');
   const [phone, setPhone] = useState('+94 77 123 4567');
+  const [name, setName] = useState('John Doe');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (auth.currentUser) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            if (data.role) setRole(data.role);
-            if (data.phone) setPhone(data.phone);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        if (auth.currentUser) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              if (data.role) setRole(data.role);
+              if (data.phone) setPhone(data.phone);
+              if (data.name) setName(data.name);
+            }
+          } catch (error) {
+            console.warn("Could not fetch user profile", error);
           }
-        } catch (error) {
-          console.warn("Could not fetch user profile", error);
         }
-      }
-      setLoading(false);
-    };
+        setLoading(false);
+      };
 
-    fetchUserData();
-  }, []);
+      fetchUserData();
+    }, [])
+  );
 
   const handleLogout = async () => {
     try {
@@ -49,26 +53,33 @@ export default function ProfileScreen() {
   }
 
   const isProvider = role === 'provider';
+  const isAdmin = role === 'admin';
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header Profile Info */}
         <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarInitials}>JD</Text>
-            <View style={styles.editAvatarBadge}>
-              <Ionicons name="camera" size={14} color="#FFF" />
-            </View>
+          <View style={[styles.avatarContainer, isAdmin && { backgroundColor: '#DC2626' }]}>
+            <Text style={styles.avatarInitials}>{name.substring(0, 2).toUpperCase()}</Text>
+            <TouchableOpacity style={styles.editAvatarBadge} onPress={() => router.push('/edit-profile')}>
+              <Ionicons name="pencil" size={14} color="#FFF" />
+            </TouchableOpacity>
           </View>
           <View style={styles.nameRow}>
-            <Text style={styles.userName}>John Doe</Text>
+            <Text style={styles.userName}>{name}</Text>
             {isProvider && <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{marginLeft: 4}} />}
+            {isAdmin && <Ionicons name="shield-checkmark" size={18} color="#DC2626" style={{marginLeft: 4}} />}
           </View>
           <Text style={styles.userPhone}>{phone}</Text>
           {isProvider && (
             <View style={styles.proBadge}>
               <Text style={styles.proBadgeText}>VERIFIED PRO</Text>
+            </View>
+          )}
+          {isAdmin && (
+            <View style={[styles.proBadge, { backgroundColor: '#FEE2E2' }]}>
+              <Text style={[styles.proBadgeText, { color: '#DC2626' }]}>SYSTEM ADMINISTRATOR</Text>
             </View>
           )}
         </View>
@@ -91,14 +102,26 @@ export default function ProfileScreen() {
         )}
 
         {/* Dynamic Settings Groups based on Role */}
-        {isProvider ? (
+        {isAdmin ? (
+          <>
+            <View style={styles.settingsGroup}>
+              <Text style={[styles.groupTitle, { color: '#DC2626' }]}>ADMINISTRATOR CONTROL</Text>
+              <View style={styles.settingsCard}>
+                <SettingItem icon="speedometer-outline" title="Open Admin Control Panel" onPress={() => router.push('/admin')} />
+                <SettingItem icon="people-outline" title="Manage Users & Providers" onPress={() => router.push('/admin')} />
+                <SettingItem icon="receipt-outline" title="All System Bookings" onPress={() => router.push('/admin')} />
+                <SettingItem icon="construct-outline" title="Live Services Catalog" onPress={() => router.push('/manage-services')} isLast />
+              </View>
+            </View>
+          </>
+        ) : isProvider ? (
           <>
             <View style={styles.settingsGroup}>
               <Text style={styles.groupTitle}>PROFESSIONAL DASHBOARD</Text>
               <View style={styles.settingsCard}>
                 <SettingItem icon="wallet-outline" title="Bank Account & Payouts" />
                 <SettingItem icon="calendar-outline" title="Availability Schedule" />
-                <SettingItem icon="construct-outline" title="Manage Services & Rates" />
+                <SettingItem icon="construct-outline" title="Manage Services & Rates" onPress={() => router.push('/manage-services')} />
                 <SettingItem icon="document-text-outline" title="Verification Documents" isLast />
               </View>
             </View>
@@ -108,6 +131,7 @@ export default function ProfileScreen() {
             <View style={styles.settingsGroup}>
               <Text style={styles.groupTitle}>ACCOUNT SETTINGS</Text>
               <View style={styles.settingsCard}>
+                <SettingItem icon="person-outline" title="Edit Profile" onPress={() => router.push('/edit-profile')} />
                 <SettingItem icon="location-outline" title="Manage Addresses" />
                 <SettingItem icon="card-outline" title="Payment Methods" />
                 <SettingItem icon="notifications-outline" title="Notifications" />
@@ -137,9 +161,9 @@ export default function ProfileScreen() {
   );
 }
 
-function SettingItem({ icon, title, isLast }: any) {
+function SettingItem({ icon, title, isLast, onPress }: any) {
   return (
-    <TouchableOpacity style={[styles.settingItem, !isLast && styles.settingItemBorder]}>
+    <TouchableOpacity style={[styles.settingItem, !isLast && styles.settingItemBorder]} onPress={onPress}>
       <View style={styles.settingItemLeft}>
         <Ionicons name={icon} size={22} color="#4B5563" style={styles.settingIcon} />
         <Text style={styles.settingTitle}>{title}</Text>
