@@ -49,7 +49,7 @@ export default function HomeScreen() {
               <Text style={styles.activeRequestTitle}>Plumbing Emergency Dispatch</Text>
               <Text style={styles.activeRequestSubtitle}>Technician: Sunimal Bandara is on his way</Text>
             </View>
-            <TouchableOpacity style={styles.trackBtn}>
+            <TouchableOpacity style={styles.trackBtn} onPress={() => router.push('/(tabs)/bookings')}>
               <Text style={styles.trackBtnText}>Track</Text>
               <Ionicons name="chevron-forward" size={16} color="#111827" />
             </TouchableOpacity>

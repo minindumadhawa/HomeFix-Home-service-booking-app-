@@ -14,6 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 export default function BookingConfirmationScreen() {
   const params = useLocalSearchParams<{
+    bookingId?: string;
     status?: string; // 'paid' | 'confirmed'
     paymentMethod?: string;
     cardLast4?: string;
@@ -29,7 +30,7 @@ export default function BookingConfirmationScreen() {
   }>();
 
   const isPaid = params.status === 'paid';
-  const bookingId = '#HF-89421';
+  const bookingId = params.bookingId ? (params.bookingId.startsWith('#') ? params.bookingId : `#${params.bookingId}`) : '#HF-89421';
   const totalAmount = params.totalAmount || '2,320.00';
   const selectedDate = params.selectedDate || 'Thu, Oct 8, 2026';
   const selectedTime = params.selectedTime || '10:30 AM';
@@ -295,6 +296,15 @@ export default function BookingConfirmationScreen() {
         <TouchableOpacity style={styles.trackLiveBtn} onPress={handleTrackLive} activeOpacity={0.8}>
           <Ionicons name="navigate" size={18} color="#FFF" style={{ marginRight: 8 }} />
           <Text style={styles.trackLiveBtnText}>Track Professional Live</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.trackLiveBtn, { backgroundColor: '#10B981', marginTop: 10 }]}
+          onPress={() => router.replace('/(tabs)/bookings')}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="calendar" size={18} color="#FFF" style={{ marginRight: 8 }} />
+          <Text style={styles.trackLiveBtnText}>View in My Bookings</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

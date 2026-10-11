@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ServiceProvider } from '../../types/provider';
+import { createBooking } from '../../services/bookingService';
 
 interface InstantBookModalProps {
   visible: boolean;
@@ -22,18 +23,38 @@ export default function InstantBookModal({
   const [notes, setNotes] = useState('');
   const [booked, setBooked] = useState(false);
 
-  const handleConfirm = () => {
+  const getPrice = () => {
+    if (selectedTier === 'standard') return `${provider.rates.standard.rate}${provider.rates.standard.unit || '/hr'}`;
+    if (selectedTier === 'diagnostic') return provider.rates.diagnostic.rate;
+    return provider.rates.emergency.rate;
+  };
+
+  const handleConfirm = async () => {
+    try {
+      await createBooking({
+        providerId: provider.id,
+        providerName: provider.name,
+        providerTitle: provider.title,
+        providerAvatar: provider.avatarUrl,
+        serviceTitle: `${provider.title} (${selectedTier.toUpperCase()} TIER)`,
+        category: provider.category || 'Home Service',
+        selectedDate: selectedDay === 'Today' ? 'Today' : 'Tomorrow',
+        selectedTime: selectedSlot,
+        status: 'Upcoming',
+        totalAmount: getPrice(),
+        paymentMethod: 'Cash on Completion',
+        paymentStatus: 'Pending',
+        issueDescription: notes || 'Instant priority dispatch service',
+      });
+    } catch (err) {
+      console.warn('Instant booking creation error:', err);
+    }
+
     setBooked(true);
     setTimeout(() => {
       setBooked(false);
       onSuccess();
     }, 1800);
-  };
-
-  const getPrice = () => {
-    if (selectedTier === 'standard') return `${provider.rates.standard.rate}${provider.rates.standard.unit}`;
-    if (selectedTier === 'diagnostic') return provider.rates.diagnostic.rate;
-    return provider.rates.emergency.rate;
   };
 
   return (

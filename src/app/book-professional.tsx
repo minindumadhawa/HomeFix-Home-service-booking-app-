@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 export default function BookProfessionalScreen() {
+  const params = useLocalSearchParams<{
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    serviceTitle?: string;
+    totalAmount?: string;
+    category?: string;
+  }>();
   // Dynamic date strip state
   const [datesList, setDatesList] = useState([
     { dayName: 'Today', dayNum: '7', month: 'Oct', fullDate: 'Wed, Oct 7', rawDay: 7 },
@@ -192,7 +200,7 @@ export default function BookProfessionalScreen() {
           <Text style={styles.summaryTitle}>Appointment Details</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Professional:</Text>
-            <Text style={styles.summaryValue}>Nimal Silva</Text>
+            <Text style={styles.summaryValue}>{params.providerName || 'Nimal Silva'}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Selected Date:</Text>
@@ -213,6 +221,12 @@ export default function BookProfessionalScreen() {
             params: {
               selectedDate: getDisplayDate(),
               selectedTime: selectedTimeSlot,
+              providerId: params.providerId,
+              providerName: params.providerName,
+              providerTitle: params.providerTitle,
+              serviceTitle: params.serviceTitle,
+              totalAmount: params.totalAmount,
+              category: params.category,
             },
           })}
         >

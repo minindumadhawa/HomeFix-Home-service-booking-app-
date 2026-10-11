@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { createBooking } from '../services/bookingService';
 
 export default function CardPaymentScreen() {
   const params = useLocalSearchParams<{
@@ -24,6 +25,10 @@ export default function CardPaymentScreen() {
     landmarkInstruction?: string;
     issueDescription?: string;
     totalAmount?: string;
+    providerId?: string;
+    providerName?: string;
+    serviceTitle?: string;
+    category?: string;
   }>();
 
   const totalAmount = params.totalAmount || '2,320.00';
@@ -52,7 +57,7 @@ export default function CardPaymentScreen() {
     }
   };
 
-  const handleAuthenticateAndPay = () => {
+  const handleAuthenticateAndPay = async () => {
     if (!cardNumber.trim() || !expiryDate.trim() || !cvv.trim() || !cardHolder.trim()) {
       Alert.alert('Incomplete Details', 'Please fill in all card details to proceed.');
       return;
@@ -60,20 +65,44 @@ export default function CardPaymentScreen() {
 
     setIsProcessing(true);
 
-    // Simulate 3D Secure / OTP authorization delay
-    setTimeout(() => {
+    try {
+      const created = await createBooking({
+        selectedDate: params.selectedDate || 'Thu, Oct 8, 2026',
+        selectedTime: params.selectedTime || '10:30 AM',
+        addressType: params.addressType || 'Home',
+        addressLine1: params.addressLine1 || 'No 45/A, Temple Road',
+        addressLine2: params.addressLine2 || 'Colombo 03',
+        addressPhone: params.addressPhone || '+94 77 123 4567',
+        landmarkInstruction: params.landmarkInstruction,
+        issueDescription: params.issueDescription,
+        totalAmount,
+        paymentMethod: 'Credit / Debit Card',
+        paymentStatus: 'Paid',
+        cardLast4: cardNumber.replace(/\s/g, '').slice(-4) || '7890',
+        status: 'Upcoming',
+        serviceTitle: params.serviceTitle || 'Electrical Safety & Circuit Audit',
+        providerName: params.providerName || 'Nimal Silva',
+        providerId: params.providerId || 'nimal-silva',
+        category: params.category || 'Electrical',
+      });
+
       setIsProcessing(false);
       router.push({
         pathname: '/booking-confirmation',
         params: {
           ...params,
+          bookingId: created.id,
           status: 'paid',
           paymentMethod: 'Credit / Debit Card',
           cardLast4: cardNumber.replace(/\s/g, '').slice(-4) || '7890',
           totalAmount,
         },
       });
-    }, 1200);
+    } catch (err) {
+      setIsProcessing(false);
+      console.error('Failed to create booking:', err);
+      Alert.alert('Payment Error', 'Could not save booking. Please try again.');
+    }
   };
 
   return (

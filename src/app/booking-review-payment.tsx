@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { createBooking } from '../services/bookingService';
 
 export default function BookingReviewPaymentScreen() {
   const [selectedPayment, setSelectedPayment] = useState<'Cash' | 'Card' | 'KOKO' | 'LankaQR'>('Cash');
   const [isBooked, setIsBooked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const params = useLocalSearchParams<{
     selectedDate?: string;
@@ -27,6 +29,12 @@ export default function BookingReviewPaymentScreen() {
     landmarkInstruction?: string;
     issueDescription?: string;
     attachedPhotosJson?: string;
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    serviceTitle?: string;
+    totalAmount?: string;
+    category?: string;
   }>();
 
   const selectedDate = params.selectedDate || 'Thu, Oct 8, 2026';
@@ -53,7 +61,9 @@ export default function BookingReviewPaymentScreen() {
     ];
   }
 
-  const handleConfirmAndBook = () => {
+  const handleConfirmAndBook = async () => {
+    if (isSubmitting) return;
+
     const bookingPayload = {
       selectedDate,
       selectedTime,
@@ -63,7 +73,12 @@ export default function BookingReviewPaymentScreen() {
       addressPhone,
       landmarkInstruction,
       issueDescription,
-      totalAmount: '2,320.00',
+      totalAmount: params.totalAmount || '2,320.00',
+      providerId: params.providerId || 'nimal-silva',
+      providerName: params.providerName || 'Nimal Silva',
+      providerTitle: params.providerTitle || 'Master Electrical Specialist',
+      serviceTitle: params.serviceTitle || 'Electrical Safety & Circuit Audit',
+      category: params.category || 'Electrical',
     };
 
     if (selectedPayment === 'Card') {
@@ -73,20 +88,39 @@ export default function BookingReviewPaymentScreen() {
         params: bookingPayload,
       });
     } else {
-      // Directs directly to confirmation page (Cash, KOKO, LankaQR)
-      router.push({
-        pathname: '/booking-confirmation',
-        params: {
+      setIsSubmitting(true);
+      try {
+        const paymentMethodLabel =
+          selectedPayment === 'Cash'
+            ? 'Cash on Completion'
+            : selectedPayment === 'KOKO'
+            ? 'KOKO Payment (Pay in 3)'
+            : 'LANKAQR / Online Banking';
+
+        const created = await createBooking({
           ...bookingPayload,
-          status: 'confirmed',
-          paymentMethod:
-            selectedPayment === 'Cash'
-              ? 'Cash on Completion'
-              : selectedPayment === 'KOKO'
-              ? 'KOKO Payment (Pay in 3)'
-              : 'LANKAQR / Online Banking',
-        },
-      });
+          paymentMethod: paymentMethodLabel,
+          paymentStatus: 'Pending',
+          status: 'Upcoming',
+          attachedPhotos,
+        });
+
+        // Directs directly to confirmation page (Cash, KOKO, LankaQR)
+        router.push({
+          pathname: '/booking-confirmation',
+          params: {
+            ...bookingPayload,
+            bookingId: created.id,
+            status: 'confirmed',
+            paymentMethod: paymentMethodLabel,
+          },
+        });
+      } catch (err) {
+        console.error('Failed to create booking:', err);
+        Alert.alert('Booking Error', 'Could not save booking details. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 

@@ -7,6 +7,12 @@ export default function BookingAddressDetailsScreen() {
   const params = useLocalSearchParams<{
     selectedDate?: string;
     selectedTime?: string;
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    serviceTitle?: string;
+    totalAmount?: string;
+    category?: string;
   }>();
 
   const selectedDate = params.selectedDate || 'Thu, Oct 8';
@@ -244,6 +250,12 @@ export default function BookingAddressDetailsScreen() {
                 landmarkInstruction,
                 issueDescription,
                 attachedPhotosJson: JSON.stringify(attachedPhotos),
+                providerId: params.providerId,
+                providerName: params.providerName,
+                providerTitle: params.providerTitle,
+                serviceTitle: params.serviceTitle,
+                totalAmount: params.totalAmount,
+                category: params.category,
               },
             });
           }}
