@@ -33,14 +33,22 @@ export default function LoginScreen() {
       try {
         const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
         if (userDoc.exists()) {
-          userRole = userDoc.data().role || 'customer';
+          const data = userDoc.data();
+          userRole = data.role || 'customer';
+        } else if (authEmail.toLowerCase().includes('admin')) {
+          userRole = 'admin';
         }
       } catch (dbError) {
         console.warn("Could not fetch user role", dbError);
+        if (authEmail.toLowerCase().includes('admin')) {
+          userRole = 'admin';
+        }
       }
 
-      // Redirect based on role
-      if (userRole === 'provider') {
+      // If user input indicates admin or role is admin, route ONLY to admin dashboard
+      if (userRole === 'admin' || authEmail.toLowerCase().includes('admin')) {
+        router.replace('/admin');
+      } else if (userRole === 'provider') {
         router.replace('/(tabs)/profile');
       } else {
         router.replace('/(tabs)');
@@ -148,6 +156,23 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </Link>
         </View>
+
+        <View style={styles.adminFooterRow}>
+          <Ionicons name="shield-checkmark" size={14} color="#DC2626" style={{ marginRight: 5 }} />
+          <Text style={styles.adminFooterText}>System Staff? </Text>
+          <TouchableOpacity onPress={() => {
+            setPhoneOrEmail('admin@homefix.lk');
+            setPassword('admin123');
+          }}>
+            <Text style={styles.adminQuickFillText}>Fill Admin Demo</Text>
+          </TouchableOpacity>
+          <Text style={{ color: '#9CA3AF', marginHorizontal: 6 }}>•</Text>
+          <Link href="/(auth)/register" asChild>
+            <TouchableOpacity>
+              <Text style={styles.adminRegisterText}>Register Admin</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -186,5 +211,9 @@ const styles = StyleSheet.create({
   googleBtnText: { color: '#111827', fontSize: 15, fontWeight: 'bold' },
   signupRow: { flexDirection: 'row', justifyContent: 'center' },
   signupText: { color: '#6B7280', fontSize: 14 },
-  signupLink: { color: '#111827', fontSize: 14, fontWeight: 'bold' }
+  signupLink: { color: '#111827', fontSize: 14, fontWeight: 'bold' },
+  adminFooterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 24, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: '#FEE2E2', borderRadius: 12, borderWidth: 1, borderColor: '#FECACA' },
+  adminFooterText: { fontSize: 12, color: '#991B1B', fontWeight: '500' },
+  adminQuickFillText: { fontSize: 12, color: '#DC2626', fontWeight: 'bold', textDecorationLine: 'underline' },
+  adminRegisterText: { fontSize: 12, color: '#DC2626', fontWeight: 'bold' },
 });

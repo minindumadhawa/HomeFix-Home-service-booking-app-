@@ -57,6 +57,8 @@ export interface InsuranceItem {
   iconName: string;
 }
 
+export type UserRole = 'customer' | 'provider' | 'admin';
+
 export interface ExperienceHistoryItem {
   id: string;
   company: string;

@@ -13,6 +13,7 @@ export default function RootLayout() {
         <Stack.Screen name="booking-review-payment" options={{ headerShown: false }} />
         <Stack.Screen name="card-payment" options={{ headerShown: false }} />
         <Stack.Screen name="booking-confirmation" options={{ headerShown: false }} />
+        <Stack.Screen name="admin" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </>

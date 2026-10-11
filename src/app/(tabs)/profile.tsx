@@ -53,13 +53,14 @@ export default function ProfileScreen() {
   }
 
   const isProvider = role === 'provider';
+  const isAdmin = role === 'admin';
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header Profile Info */}
         <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
+          <View style={[styles.avatarContainer, isAdmin && { backgroundColor: '#DC2626' }]}>
             <Text style={styles.avatarInitials}>{name.substring(0, 2).toUpperCase()}</Text>
             <TouchableOpacity style={styles.editAvatarBadge} onPress={() => router.push('/edit-profile')}>
               <Ionicons name="pencil" size={14} color="#FFF" />
@@ -68,11 +69,17 @@ export default function ProfileScreen() {
           <View style={styles.nameRow}>
             <Text style={styles.userName}>{name}</Text>
             {isProvider && <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{marginLeft: 4}} />}
+            {isAdmin && <Ionicons name="shield-checkmark" size={18} color="#DC2626" style={{marginLeft: 4}} />}
           </View>
           <Text style={styles.userPhone}>{phone}</Text>
           {isProvider && (
             <View style={styles.proBadge}>
               <Text style={styles.proBadgeText}>VERIFIED PRO</Text>
+            </View>
+          )}
+          {isAdmin && (
+            <View style={[styles.proBadge, { backgroundColor: '#FEE2E2' }]}>
+              <Text style={[styles.proBadgeText, { color: '#DC2626' }]}>SYSTEM ADMINISTRATOR</Text>
             </View>
           )}
         </View>
@@ -95,7 +102,19 @@ export default function ProfileScreen() {
         )}
 
         {/* Dynamic Settings Groups based on Role */}
-        {isProvider ? (
+        {isAdmin ? (
+          <>
+            <View style={styles.settingsGroup}>
+              <Text style={[styles.groupTitle, { color: '#DC2626' }]}>ADMINISTRATOR CONTROL</Text>
+              <View style={styles.settingsCard}>
+                <SettingItem icon="speedometer-outline" title="Open Admin Control Panel" onPress={() => router.push('/admin')} />
+                <SettingItem icon="people-outline" title="Manage Users & Providers" onPress={() => router.push('/admin')} />
+                <SettingItem icon="receipt-outline" title="All System Bookings" onPress={() => router.push('/admin')} />
+                <SettingItem icon="construct-outline" title="Live Services Catalog" onPress={() => router.push('/manage-services')} isLast />
+              </View>
+            </View>
+          </>
+        ) : isProvider ? (
           <>
             <View style={styles.settingsGroup}>
               <Text style={styles.groupTitle}>PROFESSIONAL DASHBOARD</Text>

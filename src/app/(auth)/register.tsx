@@ -13,14 +13,36 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [role, setRole] = useState('customer'); // 'customer' or 'provider'
+  const [role, setRole] = useState<'customer' | 'provider' | 'admin'>('customer'); // 'customer', 'provider', or 'admin'
+  const [adminPasscode, setAdminPasscode] = useState('');
 
   const handleRegister = async () => {
     setErrorMessage('');
-    if (!phone || !password) {
-      setErrorMessage('Please enter your mobile number and password.');
+
+    // Validation
+    if (!password) {
+      setErrorMessage('Please enter a password.');
       return;
     }
+
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (!phone && !email) {
+      setErrorMessage('Please enter either a mobile number or email address.');
+      return;
+    }
+
+    if (role === 'admin') {
+      const code = adminPasscode.trim().toLowerCase();
+      if (code !== 'admin123' && code !== 'homefix_admin' && code !== 'admin') {
+        setErrorMessage('Invalid Admin Passcode. Use "admin123" to register as Admin.');
+        return;
+      }
+    }
+
     if (!agreed) {
       setErrorMessage('You must agree to the Terms of Service.');
       return;
@@ -29,7 +51,7 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       const cleanPhone = phone.replace(/[^0-9]/g, '');
-      const authEmail = email.trim() !== '' ? email.trim() : `${cleanPhone}@homefix.local`;
+      const authEmail = email.trim() !== '' ? email.trim() : `${cleanPhone || 'user'}@homefix.local`;
       
       const userCredential = await createUserWithEmailAndPassword(auth, authEmail, password);
       
@@ -37,9 +59,10 @@ export default function RegisterScreen() {
       try {
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           uid: userCredential.user.uid,
-          phone: '+94' + cleanPhone,
-          email: email,
+          phone: cleanPhone ? '+94' + cleanPhone : '',
+          email: authEmail,
           role: role,
+          displayName: role === 'admin' ? 'System Administrator' : undefined,
           createdAt: new Date().toISOString()
         });
       } catch (dbError) {
@@ -47,14 +70,24 @@ export default function RegisterScreen() {
         // Continue anyway so they are logged in locally
       }
       
-      if (role === 'provider') {
+      if (role === 'admin') {
+        router.replace('/admin');
+      } else if (role === 'provider') {
         router.replace('/(tabs)/profile');
       } else {
         router.replace('/(tabs)');
       }
     } catch (error: any) {
       console.error("Firebase Auth Error:", error);
-      setErrorMessage(error.message || 'An error occurred during registration.');
+      let userMsg = error.message || 'An error occurred during registration.';
+      if (error.code === 'auth/email-already-in-use') {
+        userMsg = 'This email or phone account already exists. Please Sign In.';
+      } else if (error.code === 'auth/invalid-email') {
+        userMsg = 'Invalid email address format.';
+      } else if (error.code === 'auth/weak-password') {
+        userMsg = 'Password is too weak. Please use at least 6 characters.';
+      }
+      setErrorMessage(userMsg);
     } finally {
       setLoading(false);
     }
@@ -84,13 +117,53 @@ export default function RegisterScreen() {
             style={[styles.roleBtn, role === 'provider' && styles.roleBtnActive]} 
             onPress={() => setRole('provider')}
           >
-            <Text style={[styles.roleText, role === 'provider' && styles.roleTextActive]}>Service Provider</Text>
+            <Text style={[styles.roleText, role === 'provider' && styles.roleTextActive]}>Provider</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.roleBtn, role === 'admin' && styles.roleBtnActiveAdmin]} 
+            onPress={() => setRole('admin')}
+          >
+            <Ionicons name="shield-checkmark" size={13} color={role === 'admin' ? '#FFF' : '#6B7280'} style={{ marginRight: 4 }} />
+            <Text style={[styles.roleText, role === 'admin' && styles.roleTextActive]}>Admin</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Join HomeFix</Text>
+        <Text style={styles.title}>
+          {role === 'admin' ? 'Admin Portal Registration' : 'Join HomeFix'}
+        </Text>
 
         <View style={styles.card}>
+          {role === 'admin' && (
+            <View style={styles.adminNoticeBox}>
+              <View style={styles.adminNoticeHeader}>
+                <Ionicons name="shield-half" size={16} color="#DC2626" style={{ marginRight: 6 }} />
+                <Text style={styles.adminNoticeTitle}>Administrator Authorization</Text>
+              </View>
+              <Text style={styles.adminNoticeSub}>
+                Authorized personnel only. Enter Master Security Passcode to register. (Default: <Text style={{fontWeight: 'bold', color: '#111827'}}>admin123</Text>)
+              </Text>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+                <Text style={[styles.label, { color: '#DC2626', marginTop: 0, marginBottom: 0 }]}>ADMIN PASSCODE</Text>
+                <TouchableOpacity onPress={() => setAdminPasscode('admin123')}>
+                  <Text style={{ fontSize: 11, color: '#DC2626', fontWeight: 'bold', textDecorationLine: 'underline' }}>
+                    Auto-fill (admin123)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.inputGroup, { borderColor: '#FECACA', borderWidth: 1, marginTop: 8 }]}>
+                <Ionicons name="key-outline" size={18} color="#DC2626" style={styles.leftIcon} />
+                <TextInput 
+                  style={[styles.input, { paddingLeft: 40 }]} 
+                  placeholder="Enter Passcode (e.g. admin123)" 
+                  secureTextEntry 
+                  value={adminPasscode}
+                  onChangeText={setAdminPasscode}
+                />
+              </View>
+            </View>
+          )}
+
           <Text style={styles.label}>MOBILE PHONE NUMBER</Text>
           <View style={styles.inputGroup}>
             <View style={styles.prefixBox}>
@@ -109,13 +182,13 @@ export default function RegisterScreen() {
 
           <View style={styles.labelRow}>
             <Text style={styles.label}>EMAIL ADDRESS</Text>
-            <Text style={styles.labelOptional}>optional</Text>
+            <Text style={styles.labelOptional}>{role === 'admin' ? 'required for admin' : 'optional'}</Text>
           </View>
           <View style={styles.inputGroup}>
             <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.leftIcon} />
             <TextInput 
               style={[styles.input, {paddingLeft: 40}]} 
-              placeholder="johnathan.perera@example.com" 
+              placeholder="admin@homefix.lk" 
               keyboardType="email-address" 
               autoCapitalize="none"
               value={email}
@@ -179,10 +252,15 @@ const styles = StyleSheet.create({
   backBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   profileAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
   roleContainer: { flexDirection: 'row', backgroundColor: '#E5E7EB', borderRadius: 12, padding: 4, marginBottom: 20 },
-  roleBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  roleBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 8, flexDirection: 'row' },
   roleBtnActive: { backgroundColor: '#10B981' },
+  roleBtnActiveAdmin: { backgroundColor: '#DC2626' },
   roleText: { fontSize: 13, fontWeight: 'bold', color: '#6B7280' },
   roleTextActive: { color: '#FFF' },
+  adminNoticeBox: { backgroundColor: '#FEF2F2', padding: 14, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#FCA5A5' },
+  adminNoticeHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  adminNoticeTitle: { fontSize: 13, fontWeight: 'bold', color: '#DC2626' },
+  adminNoticeSub: { fontSize: 12, color: '#4B5563', lineHeight: 17 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#111827', marginBottom: 24 },
   card: { backgroundColor: '#FFF', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3, marginBottom: 40 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
