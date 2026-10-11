@@ -62,7 +62,7 @@ export default function AdminDashboardScreen() {
   const [adminResponseText, setAdminResponseText] = useState('');
   const [submittingTicketUpdate, setSubmittingTicketUpdate] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       // 1. Fetch all users from Firestore
