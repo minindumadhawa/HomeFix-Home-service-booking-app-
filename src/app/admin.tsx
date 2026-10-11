@@ -11,6 +11,8 @@ import {
   TextInput,
   RefreshControl,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -20,6 +22,8 @@ import { auth, db } from '../config/firebase';
 import { getAllProviders } from '../services/providerService';
 import { ServiceProvider } from '../types/provider';
 import { Booking, BookingStatus } from '../types/booking';
+import { getAllTickets, updateTicket as updateSupportTicket, deleteTicket as deleteSupportTicket } from '../services/ticketService';
+import { SupportTicket, TicketStatus } from '../types/ticket';
 
 interface UserRecord {
   id: string;
@@ -32,7 +36,7 @@ interface UserRecord {
 }
 
 export default function AdminDashboardScreen() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'providers' | 'bookings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'providers' | 'bookings' | 'tickets'>('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -40,15 +44,23 @@ export default function AdminDashboardScreen() {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [providers, setProviders] = useState<ServiceProvider[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'customer' | 'provider' | 'admin'>('all');
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<'all' | TicketStatus>('all');
 
   // Edit / Role Change Modal
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [isRoleModalVisible, setIsRoleModalVisible] = useState(false);
   const [updatingRole, setUpdatingRole] = useState(false);
+
+  // Ticket Response Modal
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [isTicketModalVisible, setIsTicketModalVisible] = useState(false);
+  const [adminResponseText, setAdminResponseText] = useState('');
+  const [submittingTicketUpdate, setSubmittingTicketUpdate] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -80,6 +92,10 @@ export default function AdminDashboardScreen() {
         fetchedBookings.push(d.data() as Booking);
       });
       setBookings(fetchedBookings);
+
+      // 4. Fetch all support tickets
+      const fetchedTickets = await getAllTickets();
+      setTickets(fetchedTickets);
     } catch (error) {
       console.error('Error fetching admin data:', error);
     } finally {
@@ -95,6 +111,83 @@ export default function AdminDashboardScreen() {
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchData();
+  };
+
+  const handleUpdateTicketStatus = async (ticketId: string, newStatus: TicketStatus) => {
+    try {
+      await updateSupportTicket(ticketId, { status: newStatus });
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, status: newStatus, updatedAt: new Date().toISOString() } : t))
+      );
+      Alert.alert('Ticket Updated', `Ticket status changed to ${newStatus}.`);
+    } catch (err) {
+      console.error('Failed to update ticket status:', err);
+      Alert.alert('Error', 'Could not update ticket status.');
+    }
+  };
+
+  const handleSaveAdminResponse = async () => {
+    if (!selectedTicket) return;
+    if (!adminResponseText.trim()) {
+      Alert.alert('Validation Error', 'Please enter a response message.');
+      return;
+    }
+
+    setSubmittingTicketUpdate(true);
+    try {
+      const updatedStatus: TicketStatus = selectedTicket.status === 'Open' ? 'In Progress' : selectedTicket.status;
+      await updateSupportTicket(selectedTicket.id, {
+        adminResponse: adminResponseText.trim(),
+        status: updatedStatus,
+      });
+
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === selectedTicket.id
+            ? {
+                ...t,
+                adminResponse: adminResponseText.trim(),
+                status: updatedStatus,
+                updatedAt: new Date().toISOString(),
+              }
+            : t
+        )
+      );
+
+      Alert.alert('Response Saved', 'Customer will now see your response on their Support page.');
+      setIsTicketModalVisible(false);
+      setSelectedTicket(null);
+      setAdminResponseText('');
+    } catch (err) {
+      console.error('Failed to save ticket response:', err);
+      Alert.alert('Error', 'Could not submit response. Please try again.');
+    } finally {
+      setSubmittingTicketUpdate(false);
+    }
+  };
+
+  const handleDeleteTicket = (ticket: SupportTicket) => {
+    Alert.alert(
+      'Delete Support Ticket',
+      `Are you sure you want to delete ticket #${ticket.id.slice(0, 6)}: "${ticket.subject}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteSupportTicket(ticket.id);
+              setTickets((prev) => prev.filter((t) => t.id !== ticket.id));
+              Alert.alert('Deleted', 'Support ticket has been removed.');
+            } catch (err) {
+              console.error('Failed to delete ticket:', err);
+              Alert.alert('Error', 'Could not delete ticket.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleLogout = async () => {
@@ -175,6 +268,19 @@ export default function AdminDashboardScreen() {
     return matchesSearch && matchesRole;
   });
 
+  // Filtered Tickets
+  const filteredTickets = tickets.filter((t) => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      (t.subject || '').toLowerCase().includes(q) ||
+      (t.userName || '').toLowerCase().includes(q) ||
+      (t.userEmail || '').toLowerCase().includes(q) ||
+      (t.topic || '').toLowerCase().includes(q) ||
+      (t.id || '').toLowerCase().includes(q);
+    const matchesStatus = ticketStatusFilter === 'all' || t.status === ticketStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   // Calculate high-level stats
   const totalUsers = users.length;
   const totalCustomers = users.filter((u) => u.role === 'customer').length;
@@ -183,6 +289,8 @@ export default function AdminDashboardScreen() {
   const totalBookingsCount = bookings.length;
   const upcomingBookings = bookings.filter((b) => b.status === 'Upcoming').length;
   const completedBookings = bookings.filter((b) => b.status === 'Completed').length;
+  const totalTicketsCount = tickets.length;
+  const openTicketsCount = tickets.filter((t) => t.status === 'Open' || t.status === 'In Progress').length;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -263,6 +371,20 @@ export default function AdminDashboardScreen() {
             Bookings ({bookings.length})
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabItem, activeTab === 'tickets' && styles.tabItemActive]}
+          onPress={() => setActiveTab('tickets')}
+        >
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={18}
+            color={activeTab === 'tickets' ? '#EF4444' : '#9CA3AF'}
+          />
+          <Text style={[styles.tabText, activeTab === 'tickets' && styles.tabTextActive]}>
+            Tickets ({tickets.length})
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Main Content Area */}
@@ -315,11 +437,35 @@ export default function AdminDashboardScreen() {
                   <Text style={styles.metricValue}>{totalAdmins}</Text>
                   <Text style={styles.metricLabel}>System Admins</Text>
                 </View>
+
+                <View style={styles.metricCard}>
+                  <View style={[styles.metricIconBox, { backgroundColor: '#F5F3FF' }]}>
+                    <Ionicons name="chatbubbles" size={20} color="#7C3AED" />
+                  </View>
+                  <Text style={styles.metricValue}>{openTicketsCount}</Text>
+                  <Text style={styles.metricLabel}>Open Tickets</Text>
+                </View>
               </View>
 
               {/* Quick Actions */}
               <Text style={styles.sectionHeader}>ADMIN QUICK ACTIONS</Text>
               <View style={styles.quickActionsCard}>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => setActiveTab('tickets')}
+                >
+                  <View style={[styles.actionIcon, { backgroundColor: '#F5F3FF' }]}>
+                    <Ionicons name="chatbubble-ellipses" size={22} color="#7C3AED" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.actionTitle}>Review Support Tickets ({openTicketsCount} pending)</Text>
+                    <Text style={styles.actionSub}>Read user issues, reply & change ticket status</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+
+                <View style={styles.actionDivider} />
+
                 <TouchableOpacity
                   style={styles.actionBtn}
                   onPress={() => router.push('/manage-services')}
@@ -661,9 +807,301 @@ export default function AdminDashboardScreen() {
             </View>
           )}
 
+          {/* TAB 5: TICKETS MANAGEMENT */}
+          {activeTab === 'tickets' && (
+            <View style={styles.tabContent}>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionHeader}>SUPPORT TICKETS ({tickets.length})</Text>
+                <TouchableOpacity
+                  style={[styles.refreshIconBtn]}
+                  onPress={handleRefresh}
+                >
+                  <Ionicons name="refresh" size={16} color="#4F46E5" />
+                  <Text style={styles.refreshIconBtnText}>Sync</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Ticket Search Bar */}
+              <View style={styles.searchRow}>
+                <Ionicons name="search" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
+                <TextInput
+                  placeholder="Search tickets by subject, user, or ID..."
+                  placeholderTextColor="#9CA3AF"
+                  style={styles.searchInput}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery !== '' && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Status Filter Pills */}
+              <View style={styles.roleFilterRow}>
+                {(['all', 'Open', 'In Progress', 'Resolved', 'Closed'] as const).map((st) => (
+                  <TouchableOpacity
+                    key={st}
+                    style={[
+                      styles.roleFilterPill,
+                      ticketStatusFilter === st && styles.roleFilterPillActive,
+                    ]}
+                    onPress={() => setTicketStatusFilter(st)}
+                  >
+                    <Text
+                      style={[
+                        styles.roleFilterText,
+                        ticketStatusFilter === st && styles.roleFilterTextActive,
+                      ]}
+                    >
+                      {st}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {filteredTickets.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={32} color="#9CA3AF" />
+                  <Text style={styles.emptyText}>No support tickets found.</Text>
+                </View>
+              ) : (
+                filteredTickets.map((t) => (
+                  <View key={t.id} style={styles.ticketAdminCard}>
+                    <View style={styles.ticketCardHeader}>
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                          <View
+                            style={[
+                              styles.ticketPriorityBadge,
+                              t.priority === 'Urgent'
+                                ? { backgroundColor: '#FEE2E2' }
+                                : t.priority === 'High'
+                                ? { backgroundColor: '#FFEDD5' }
+                                : t.priority === 'Medium'
+                                ? { backgroundColor: '#FEF3C7' }
+                                : { backgroundColor: '#F3F4F6' },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.ticketPriorityText,
+                                t.priority === 'Urgent'
+                                  ? { color: '#DC2626' }
+                                  : t.priority === 'High'
+                                  ? { color: '#EA580C' }
+                                  : t.priority === 'Medium'
+                                  ? { color: '#D97706' }
+                                  : { color: '#4B5563' },
+                              ]}
+                            >
+                              {t.priority}
+                            </Text>
+                          </View>
+
+                          <View
+                            style={[
+                              styles.statusBadge,
+                              t.status === 'Open'
+                                ? { backgroundColor: '#EFF6FF' }
+                                : t.status === 'In Progress'
+                                ? { backgroundColor: '#FEF3C7' }
+                                : t.status === 'Resolved'
+                                ? { backgroundColor: '#ECFDF5' }
+                                : { backgroundColor: '#F3F4F6' },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.statusBadgeText,
+                                t.status === 'Open'
+                                  ? { color: '#2563EB' }
+                                  : t.status === 'In Progress'
+                                  ? { color: '#D97706' }
+                                  : t.status === 'Resolved'
+                                  ? { color: '#059669' }
+                                  : { color: '#6B7280' },
+                              ]}
+                            >
+                              {t.status}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text style={styles.ticketAdminSubject}>{t.subject}</Text>
+                        <Text style={styles.ticketAdminMeta}>
+                          #{t.id.slice(0, 8)} • {t.topic} • {new Date(t.createdAt).toLocaleDateString()}
+                        </Text>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.ticketDeleteBtn}
+                        onPress={() => handleDeleteTicket(t)}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Client Info Box */}
+                    <View style={styles.ticketClientBox}>
+                      <Ionicons name="person-circle-outline" size={16} color="#4B5563" style={{ marginRight: 6 }} />
+                      <Text style={styles.ticketClientText}>
+                        Client: <Text style={{ fontWeight: '600' }}>{t.userName}</Text> ({t.userEmail})
+                      </Text>
+                    </View>
+
+                    {/* Ticket message body */}
+                    <View style={styles.ticketDescriptionBox}>
+                      <Text style={styles.ticketDescriptionText}>{t.description}</Text>
+                    </View>
+
+                    {/* Admin Response if available */}
+                    {t.adminResponse && (
+                      <View style={styles.existingAdminResponseBox}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                          <Ionicons name="shield-checkmark" size={14} color="#059669" style={{ marginRight: 4 }} />
+                          <Text style={styles.existingAdminResponseLabel}>Staff Response</Text>
+                        </View>
+                        <Text style={styles.existingAdminResponseText}>{t.adminResponse}</Text>
+                      </View>
+                    )}
+
+                    {/* Action buttons */}
+                    <View style={styles.ticketActionRow}>
+                      <TouchableOpacity
+                        style={styles.ticketReplyBtn}
+                        onPress={() => {
+                          setSelectedTicket(t);
+                          setAdminResponseText(t.adminResponse || '');
+                          setIsTicketModalVisible(true);
+                        }}
+                      >
+                        <Ionicons name="chatbubble-outline" size={14} color="#FFF" style={{ marginRight: 4 }} />
+                        <Text style={styles.ticketReplyBtnText}>
+                          {t.adminResponse ? 'Edit Reply' : 'Reply to Client'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* Status changes */}
+                      {t.status !== 'In Progress' && (
+                        <TouchableOpacity
+                          style={[styles.ticketStatusChangeBtn, { backgroundColor: '#FEF3C7' }]}
+                          onPress={() => handleUpdateTicketStatus(t.id, 'In Progress')}
+                        >
+                          <Text style={[styles.ticketStatusChangeText, { color: '#D97706' }]}>In Progress</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {t.status !== 'Resolved' && (
+                        <TouchableOpacity
+                          style={[styles.ticketStatusChangeBtn, { backgroundColor: '#ECFDF5' }]}
+                          onPress={() => handleUpdateTicketStatus(t.id, 'Resolved')}
+                        >
+                          <Text style={[styles.ticketStatusChangeText, { color: '#059669' }]}>Resolve</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {t.status !== 'Closed' && (
+                        <TouchableOpacity
+                          style={[styles.ticketStatusChangeBtn, { backgroundColor: '#F3F4F6' }]}
+                          onPress={() => handleUpdateTicketStatus(t.id, 'Closed')}
+                        >
+                          <Text style={[styles.ticketStatusChangeText, { color: '#4B5563' }]}>Close</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                ))
+              )}
+
+              {/* Global Admin Logout at bottom of tickets view */}
+              <TouchableOpacity
+                style={styles.adminBottomLogoutBtn}
+                onPress={handleLogout}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="log-out-outline" size={18} color="#EF4444" style={{ marginRight: 8 }} />
+                <Text style={styles.adminBottomLogoutText}>Log Out from Admin Session</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
+
+      {/* Admin Ticket Response Modal */}
+      <Modal
+        visible={isTicketModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsTicketModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          {/* Backdrop */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setIsTicketModalVisible(false)}
+          />
+
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Support Ticket Response</Text>
+              <TouchableOpacity onPress={() => setIsTicketModalVisible(false)}>
+                <Ionicons name="close" size={20} color="#111827" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedTicket && (
+              <>
+                <Text style={styles.modalSub}>
+                  Ticket: <Text style={{ fontWeight: 'bold' }}>{selectedTicket.subject}</Text>
+                </Text>
+                <Text style={[styles.ticketAdminMeta, { marginBottom: 12 }]}>
+                  From: {selectedTicket.userName} ({selectedTicket.userEmail})
+                </Text>
+
+                <TextInput
+                  placeholder="Write your official response or update to the customer here..."
+                  placeholderTextColor="#9CA3AF"
+                  style={styles.adminReplyInput}
+                  multiline
+                  numberOfLines={4}
+                  value={adminResponseText}
+                  onChangeText={setAdminResponseText}
+                />
+
+                <View style={styles.ticketModalBtnRow}>
+                  <TouchableOpacity
+                    style={styles.ticketModalCancelBtn}
+                    onPress={() => setIsTicketModalVisible(false)}
+                    disabled={submittingTicketUpdate}
+                  >
+                    <Text style={styles.ticketModalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.ticketModalSaveBtn}
+                    onPress={handleSaveAdminResponse}
+                    disabled={submittingTicketUpdate}
+                  >
+                    {submittingTicketUpdate ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <Text style={styles.ticketModalSaveText}>Submit Response</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Role Picker Modal */}
       <Modal
@@ -672,12 +1110,15 @@ export default function AdminDashboardScreen() {
         animationType="fade"
         onRequestClose={() => setIsRoleModalVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsRoleModalVisible(false)}
-        >
-          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+        <View style={styles.modalOverlay}>
+          {/* Backdrop */}
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setIsRoleModalVisible(false)}
+          />
+
+          <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Change Account Role</Text>
               <TouchableOpacity onPress={() => setIsRoleModalVisible(false)}>
@@ -726,7 +1167,7 @@ export default function AdminDashboardScreen() {
               <ActivityIndicator size="small" color="#EF4444" style={{ marginTop: 12 }} />
             )}
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -1110,4 +1551,178 @@ const styles = StyleSheet.create({
   },
   roleOptionSelected: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
   roleOptionName: { fontSize: 13, fontWeight: 'bold', color: '#111827' },
+  // Tickets tab styles
+  refreshIconBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  refreshIconBtnText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#4F46E5',
+    marginLeft: 4,
+  },
+  ticketAdminCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4F46E5',
+  },
+  ticketCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  ticketPriorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginRight: 6,
+  },
+  ticketPriorityText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  ticketAdminSubject: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  ticketAdminMeta: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  ticketDeleteBtn: {
+    padding: 6,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+  },
+  ticketClientBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  ticketClientText: {
+    fontSize: 12,
+    color: '#4B5563',
+  },
+  ticketDescriptionBox: {
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  ticketDescriptionText: {
+    fontSize: 13,
+    color: '#374151',
+    lineHeight: 18,
+  },
+  existingAdminResponseBox: {
+    backgroundColor: '#ECFDF5',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
+  },
+  existingAdminResponseLabel: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#059669',
+  },
+  existingAdminResponseText: {
+    fontSize: 12,
+    color: '#065F46',
+    lineHeight: 16,
+  },
+  ticketActionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  ticketReplyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  ticketReplyBtnText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  ticketStatusChangeBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  ticketStatusChangeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  adminReplyInput: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    fontSize: 14,
+    color: '#111827',
+    textAlignVertical: 'top',
+    height: 110,
+    marginBottom: 16,
+  },
+  ticketModalBtnRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  ticketModalCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  ticketModalCancelText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#4B5563',
+  },
+  ticketModalSaveBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#4F46E5',
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  ticketModalSaveText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
 });
