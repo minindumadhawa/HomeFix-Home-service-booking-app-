@@ -1,8 +1,22 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, SafeAreaView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { getAllProviders } from '../../services/providerService';
+import { ServiceProvider } from '../../types/provider';
 
 export default function HomeScreen() {
+  const [providers, setProviders] = useState<ServiceProvider[]>([]);
+  const [isLoadingProviders, setIsLoadingProviders] = useState(true);
+
+  useEffect(() => {
+    getAllProviders().then((res) => {
+      setProviders(res);
+      setIsLoadingProviders(false);
+    }).catch(() => {
+      setIsLoadingProviders(false);
+    });
+  }, []);
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -84,8 +98,8 @@ export default function HomeScreen() {
         </View>
         <View style={styles.categoriesGrid}>
           {[
-            { id: 1, name: 'Plumbing\nServices', icon: 'build-outline', route: '/provider/gamage-wdk' },
-            { id: 2, name: 'Electrical\nRepairs', icon: 'flash-outline', route: '/provider/nimal-silva' },
+            { id: 1, name: 'Plumbing\nServices', icon: 'build-outline', route: '/(tabs)/services' },
+            { id: 2, name: 'Electrical\nRepairs', icon: 'flash-outline', route: '/(tabs)/services' },
             { id: 3, name: 'Home\nCleaning', icon: 'sparkles-outline', route: '/(tabs)/services' },
             { id: 4, name: 'Painting &\nCarpentry', icon: 'color-palette-outline', route: '/(tabs)/services' },
           ].map((cat) => (
@@ -148,76 +162,91 @@ export default function HomeScreen() {
           </View>
         </View>
         
-        {/* Pro Card 1: Gamage W.D.K. */}
-        <TouchableOpacity
-          style={styles.proCard}
-          onPress={() => router.push('/provider/gamage-wdk' as any)}
-          activeOpacity={0.9}
-        >
-          <View style={styles.proCardHeader}>
-            <View style={[styles.proAvatarContainer, { overflow: 'hidden' }]}>
-              <Ionicons name="construct" size={28} color="#10B981" />
-              <Text style={[styles.proPhotoText, { color: '#10B981' }]}>MASTER</Text>
-            </View>
-            <View style={styles.proInfo}>
-              <View style={styles.proBadgesRow}>
-                <View style={styles.verifiedBadge}>
-                  <Ionicons name="checkmark" size={12} color="#FFF" />
-                  <Text style={styles.verifiedText}>VERIFIED PRO</Text>
-                </View>
-                <Text style={styles.proRating}>
-                  <Ionicons name="star" size={12} color="#F59E0B" /> 4.9 <Text style={styles.proReviews}>(128 reviews)</Text>
-                </Text>
-              </View>
-              <Text style={styles.proName}>Gamage W.D.K. - Pipe Specialist</Text>
-              <Text style={styles.proRate}>Starting: $40/hr <Text style={styles.proDot}>•</Text> NVQ Level 4</Text>
-              <Text style={styles.proDistance}>
-                <Ionicons name="location" size={12} color="#9CA3AF" /> Colombo & Western Province
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.bookNowProBtn}
-            onPress={() => router.push('/provider/gamage-wdk' as any)}
-          >
-            <Text style={styles.bookNowProText}>VIEW CREDENTIALS & BOOK</Text>
-            <Ionicons name="arrow-forward" size={16} color="#FFF" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-        </TouchableOpacity>
+        {/* Dynamic Verified Professionals */}
+        {providers.length > 0 ? (
+          providers.slice(0, 5).map((p) => {
+            const displayRate = p.rates?.standard?.rate || 'LKR 2,500';
+            const displayUnit = p.rates?.standard?.unit || '/hr';
 
-        {/* Pro Card 2: Nimal Silva */}
-        <TouchableOpacity
-          style={styles.proCard}
-          onPress={() => router.push('/provider/nimal-silva' as any)}
-          activeOpacity={0.9}
-        >
-          <View style={styles.proCardHeader}>
-            <View style={styles.proAvatarContainer}>
-              <Ionicons name="flash" size={28} color="#9CA3AF" />
-              <Text style={styles.proPhotoText}>ELECTRIC</Text>
-            </View>
-            <View style={styles.proInfo}>
-              <View style={styles.proBadgesRow}>
-                <View style={styles.verifiedBadge}>
-                  <Ionicons name="checkmark" size={12} color="#FFF" />
-                  <Text style={styles.verifiedText}>VERIFIED</Text>
+            return (
+              <TouchableOpacity
+                key={p.id}
+                style={styles.proCard}
+                onPress={() => router.push(`/provider/${p.id}` as any)}
+                activeOpacity={0.9}
+              >
+                <View style={styles.proCardHeader}>
+                  <View style={[styles.proAvatarContainer, { overflow: 'hidden' }]}>
+                    {p.avatarUrl ? (
+                      <Image source={{ uri: p.avatarUrl }} style={{ width: '100%', height: '100%' }} />
+                    ) : (
+                      <Ionicons name="person" size={28} color="#10B981" />
+                    )}
+                  </View>
+                  <View style={styles.proInfo}>
+                    <View style={styles.proBadgesRow}>
+                      <View style={styles.verifiedBadge}>
+                        <Ionicons name="checkmark" size={12} color="#FFF" />
+                        <Text style={styles.verifiedText}>{p.verificationBadgeText || 'VERIFIED PRO'}</Text>
+                      </View>
+                      <Text style={styles.proRating}>
+                        <Ionicons name="star" size={12} color="#F59E0B" /> {p.rating.toFixed(1)}{' '}
+                        <Text style={styles.proReviews}>({p.reviewCount} reviews)</Text>
+                      </Text>
+                    </View>
+                    <Text style={styles.proName}>{p.name}</Text>
+                    <Text style={styles.proRate}>
+                      Rate: {displayRate}{displayUnit} <Text style={styles.proDot}>•</Text> {p.category || 'Specialist'}
+                    </Text>
+                    <Text style={styles.proDistance}>
+                      <Ionicons name="location" size={12} color="#9CA3AF" /> {p.location || 'Colombo'}
+                    </Text>
+                  </View>
                 </View>
-                <Text style={styles.proRating}>
-                  <Ionicons name="star" size={12} color="#F59E0B" /> 4.8 <Text style={styles.proReviews}>(94 reviews)</Text>
-                </Text>
-              </View>
-              <Text style={styles.proName}>Nimal Silva Electrical Works</Text>
-              <Text style={styles.proRate}>Fixed Rate: Rs. 1,800/hr <Text style={styles.proDot}>•</Text></Text>
-              <Text style={styles.proDistance}>
-                <Ionicons name="location" size={12} color="#9CA3AF" /> 3.1 km away
+                <TouchableOpacity
+                  style={styles.bookNowProBtn}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/book-professional',
+                      params: {
+                        providerId: p.id,
+                        providerName: p.name,
+                        providerTitle: p.title,
+                        providerAvatar: p.avatarUrl,
+                        category: p.category || 'General',
+                        serviceTitle: p.title || `${p.category || 'Home'} Service`,
+                        totalAmount: displayRate.replace(/[^0-9.,]/g, '') || '2,500.00',
+                      },
+                    })
+                  }
+                >
+                  <Text style={styles.bookNowProText}>BOOK SPECIALIST</Text>
+                  <Ionicons name="arrow-forward" size={16} color="#FFF" style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            );
+          })
+        ) : (
+          <TouchableOpacity
+            style={styles.proCard}
+            onPress={() => router.push('/(tabs)/services')}
+            activeOpacity={0.9}
+          >
+            <View style={{ alignItems: 'center', paddingVertical: 16 }}>
+              <Ionicons name="search" size={32} color="#10B981" />
+              <Text style={[styles.proName, { marginTop: 8, textAlign: 'center' }]}>
+                Explore Active Service Professionals
+              </Text>
+              <Text style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', marginTop: 4 }}>
+                Browse our verified database of plumbers, electricians, and technicians.
               </Text>
             </View>
-          </View>
-          <TouchableOpacity style={styles.bookNowProBtn} onPress={() => router.push('/book-professional')}>
-            <Text style={styles.bookNowProText}>BOOK NOW</Text>
-            <Ionicons name="arrow-forward" size={16} color="#FFF" style={{ marginLeft: 4 }} />
+            <TouchableOpacity style={styles.bookNowProBtn} onPress={() => router.push('/(tabs)/services')}>
+              <Text style={styles.bookNowProText}>BROWSE ALL SERVICES</Text>
+              <Ionicons name="arrow-forward" size={16} color="#FFF" style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
+        )}
 
       </ScrollView>
     </SafeAreaView>

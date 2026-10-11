@@ -63,13 +63,13 @@ export async function createBooking(payload: Partial<Booking>): Promise<Booking>
     userName: user?.displayName || payload.userName || 'Client',
     userPhone: payload.userPhone || user?.phoneNumber || '+94 77 123 4567',
     providerId: payload.providerId || 'pro-assigned',
-    providerName: payload.providerName || 'Nimal Silva',
-    providerTitle: payload.providerTitle || 'Master Electrical Specialist',
+    providerName: payload.providerName || 'Assigned Specialist',
+    providerTitle: payload.providerTitle || 'Professional Specialist',
     providerAvatar:
       payload.providerAvatar ||
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
-    serviceTitle: payload.serviceTitle || 'Electrical Safety & Circuit Audit',
-    category: payload.category || 'Electrical',
+    serviceTitle: payload.serviceTitle || (payload.category ? `${payload.category} Service` : 'Home Maintenance Service'),
+    category: payload.category || 'General',
     selectedDate: payload.selectedDate || 'Thu, Oct 8, 2026',
     selectedTime: payload.selectedTime || '10:30 AM',
     status: (payload.status as BookingStatus) || 'Upcoming',

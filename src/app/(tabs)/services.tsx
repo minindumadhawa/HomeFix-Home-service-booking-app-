@@ -434,7 +434,18 @@ export default function ServicesScreen() {
                       style={styles.bookDirectBtn}
                       onPress={(e) => {
                         e.stopPropagation();
-                        router.push(`/provider/${provider.id}` as any);
+                        router.push({
+                          pathname: '/book-professional',
+                          params: {
+                            providerId: provider.id,
+                            providerName: provider.name,
+                            providerTitle: provider.title,
+                            providerAvatar: provider.avatarUrl,
+                            serviceTitle: provider.title,
+                            category: provider.resolvedCategory,
+                            totalAmount: provider.rates?.standard?.rate || '2,320.00',
+                          },
+                        });
                       }}
                     >
                       <Text style={styles.bookDirectText}>Book</Text>
@@ -482,7 +493,18 @@ export default function ServicesScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.bookServiceBtn}
-                    onPress={() => router.push(`/provider/${pack.providerId}` as any)}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/book-professional',
+                        params: {
+                          providerId: pack.providerId,
+                          providerName: pack.providerName,
+                          serviceTitle: pack.title,
+                          category: pack.category,
+                          totalAmount: pack.price,
+                        },
+                      })
+                    }
                   >
                     <Text style={styles.bookServiceText}>Book Service</Text>
                     <Ionicons name="arrow-forward" size={14} color="#FFF" style={{ marginLeft: 4 }} />

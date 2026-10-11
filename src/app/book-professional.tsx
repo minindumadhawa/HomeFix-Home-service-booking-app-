@@ -1,17 +1,52 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { getProviderById } from '../services/providerService';
 
 export default function BookProfessionalScreen() {
   const params = useLocalSearchParams<{
     providerId?: string;
     providerName?: string;
     providerTitle?: string;
+    providerAvatar?: string;
     serviceTitle?: string;
     totalAmount?: string;
     category?: string;
   }>();
+
+  const [providerInfo, setProviderInfo] = useState<{
+    id?: string;
+    name?: string;
+    title?: string;
+    avatarUrl?: string;
+    category?: string;
+    rate?: string;
+  }>({
+    id: params.providerId,
+    name: params.providerName,
+    title: params.providerTitle || params.serviceTitle,
+    avatarUrl: params.providerAvatar,
+    category: params.category,
+    rate: params.totalAmount,
+  });
+
+  useEffect(() => {
+    if (params.providerId) {
+      getProviderById(params.providerId).then((p) => {
+        if (p) {
+          setProviderInfo({
+            id: p.id,
+            name: p.name,
+            title: p.title,
+            avatarUrl: p.avatarUrl,
+            category: p.category,
+            rate: p.rates?.standard?.rate,
+          });
+        }
+      });
+    }
+  }, [params.providerId]);
   // Dynamic date strip state
   const [datesList, setDatesList] = useState([
     { dayName: 'Today', dayNum: '7', month: 'Oct', fullDate: 'Wed, Oct 7', rawDay: 7 },
@@ -117,8 +152,17 @@ export default function BookProfessionalScreen() {
         <View style={styles.proCard}>
           <View style={styles.proCardHeader}>
             <View style={styles.proAvatarContainer}>
-              <Ionicons name="person" size={30} color="#9CA3AF" />
-              <Text style={styles.proPhotoText}>PRO PHOTO</Text>
+              {(providerInfo.avatarUrl || params.providerAvatar) ? (
+                <Image
+                  source={{ uri: providerInfo.avatarUrl || params.providerAvatar }}
+                  style={{ width: '100%', height: '100%', borderRadius: 8 }}
+                />
+              ) : (
+                <>
+                  <Ionicons name="person" size={30} color="#9CA3AF" />
+                  <Text style={styles.proPhotoText}>PRO</Text>
+                </>
+              )}
             </View>
             <View style={styles.proInfo}>
               <View style={styles.proBadgesRow}>
@@ -127,13 +171,15 @@ export default function BookProfessionalScreen() {
                   <Text style={styles.verifiedText}>VERIFIED</Text>
                 </View>
                 <Text style={styles.proRating}>
-                  <Ionicons name="star" size={12} color="#FBBF24" /> 4.8 <Text style={styles.proReviews}>(94 reviews)</Text>
+                  <Ionicons name="star" size={12} color="#FBBF24" /> 4.9 <Text style={styles.proReviews}>(Top Rated)</Text>
                 </Text>
               </View>
-              <Text style={styles.proName}>Nimal Silva Electrical Works</Text>
-              <Text style={styles.proRate}>Fixed Rate: Rs. 1,800/hr <Text style={styles.proDot}>•</Text></Text>
+              <Text style={styles.proName}>{providerInfo.name || params.providerName || 'Assigned Specialist'}</Text>
+              <Text style={styles.proRate}>
+                {providerInfo.title || params.providerTitle || params.serviceTitle || 'Professional Specialist'}
+              </Text>
               <Text style={styles.proDistance}>
-                <Ionicons name="location" size={12} color="#9CA3AF" /> 3.1 km away
+                <Ionicons name="location" size={12} color="#9CA3AF" /> Active Pro • Available for Booking
               </Text>
             </View>
           </View>
@@ -200,8 +246,14 @@ export default function BookProfessionalScreen() {
           <Text style={styles.summaryTitle}>Appointment Details</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Professional:</Text>
-            <Text style={styles.summaryValue}>{params.providerName || 'Nimal Silva'}</Text>
+            <Text style={styles.summaryValue}>{providerInfo.name || params.providerName || 'Certified Specialist'}</Text>
           </View>
+          {(providerInfo.title || params.serviceTitle) && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Service:</Text>
+              <Text style={styles.summaryValue}>{providerInfo.title || params.serviceTitle}</Text>
+            </View>
+          )}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Selected Date:</Text>
             <Text style={styles.summaryValue}>{getDisplayDate()}</Text>
@@ -221,12 +273,13 @@ export default function BookProfessionalScreen() {
             params: {
               selectedDate: getDisplayDate(),
               selectedTime: selectedTimeSlot,
-              providerId: params.providerId,
-              providerName: params.providerName,
-              providerTitle: params.providerTitle,
-              serviceTitle: params.serviceTitle,
-              totalAmount: params.totalAmount,
-              category: params.category,
+              providerId: providerInfo.id || params.providerId,
+              providerName: providerInfo.name || params.providerName || 'Certified Specialist',
+              providerTitle: providerInfo.title || params.providerTitle || params.serviceTitle || 'Home Service',
+              providerAvatar: providerInfo.avatarUrl || params.providerAvatar,
+              serviceTitle: params.serviceTitle || providerInfo.title || 'Home Service',
+              totalAmount: params.totalAmount || providerInfo.rate || '2,320.00',
+              category: params.category || providerInfo.category || 'Service',
             },
           })}
         >

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -27,6 +28,12 @@ export default function BookingConfirmationScreen() {
     addressPhone?: string;
     landmarkInstruction?: string;
     issueDescription?: string;
+    providerId?: string;
+    providerName?: string;
+    providerTitle?: string;
+    providerAvatar?: string;
+    serviceTitle?: string;
+    category?: string;
   }>();
 
   const isPaid = params.status === 'paid';
@@ -36,6 +43,9 @@ export default function BookingConfirmationScreen() {
   const selectedTime = params.selectedTime || '10:30 AM';
   const paymentMethod = params.paymentMethod || (isPaid ? 'Credit / Debit Card' : 'Cash on Completion');
   const addressLine1 = params.addressLine1 || 'No 45/A, Temple Road, Colombo 03';
+  const providerName = params.providerName || 'Assigned Specialist';
+  const providerTitle = params.providerTitle || params.serviceTitle || (params.category ? `${params.category} Specialist` : 'Certified Pro');
+  const providerAvatar = params.providerAvatar || '';
 
   // Tracking Steps Flow:
   // 1. Placed (Done) -> 2. On the Way (Active) -> 3. Work in Progress (Pending) -> 4. Completed (Pending)
@@ -44,19 +54,19 @@ export default function BookingConfirmationScreen() {
   const trackingSteps = [
     {
       title: 'Booking Placed',
-      description: 'Request assigned & confirmed by Nimal Silva',
+      description: `Request assigned & confirmed by ${providerName}`,
       time: 'Just now',
       icon: 'checkmark-circle',
     },
     {
       title: 'Professional On the Way',
-      description: 'En route with toolkit & safety gear (ETA ~25 mins)',
+      description: 'En route with toolkit & equipment (ETA ~25 mins)',
       time: 'In Progress',
       icon: 'bicycle',
     },
     {
       title: 'Work in Progress',
-      description: 'Inspection & electrical fix at your premise',
+      description: 'Inspection & service execution at your premise',
       time: 'Upcoming',
       icon: 'hammer',
     },
@@ -78,18 +88,18 @@ export default function BookingConfirmationScreen() {
   const handleCallPro = () => {
     const phoneNumber = '+94771234567';
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
-      Alert.alert('Call Nimal Silva', `Dialing ${phoneNumber}...`);
+      Alert.alert(`Call ${providerName}`, `Dialing ${phoneNumber}...`);
     });
   };
 
   const handleMessagePro = () => {
-    Alert.alert('Message Nimal Silva', 'Opening direct in-app chat with professional...');
+    Alert.alert(`Message ${providerName}`, 'Opening direct in-app chat with professional...');
   };
 
   const handleTrackLive = () => {
     Alert.alert(
       '📍 Live GPS Tracking',
-      'Nimal Silva is approximately 3.1 km away on Marine Drive. Estimated arrival in 25 minutes.'
+      `${providerName} is approximately 2.5 km away. Estimated arrival in 20 minutes.`
     );
   };
 
@@ -169,8 +179,17 @@ export default function BookingConfirmationScreen() {
         <View style={styles.proCard}>
           <View style={styles.proCardHeader}>
             <View style={styles.proAvatarContainer}>
-              <Ionicons name="person" size={26} color="#9CA3AF" />
-              <Text style={styles.proPhotoText}>PRO</Text>
+              {providerAvatar ? (
+                <Image
+                  source={{ uri: providerAvatar }}
+                  style={{ width: '100%', height: '100%', borderRadius: 8 }}
+                />
+              ) : (
+                <>
+                  <Ionicons name="person" size={26} color="#9CA3AF" />
+                  <Text style={styles.proPhotoText}>PRO</Text>
+                </>
+              )}
             </View>
             <View style={styles.proInfo}>
               <View style={styles.proBadgesRow}>
@@ -179,11 +198,11 @@ export default function BookingConfirmationScreen() {
                   <Text style={styles.verifiedText}>ASSIGNED</Text>
                 </View>
                 <Text style={styles.proRating}>
-                  <Ionicons name="star" size={12} color="#FBBF24" /> 4.8 (94)
+                  <Ionicons name="star" size={12} color="#FBBF24" /> 4.9 (Verified)
                 </Text>
               </View>
-              <Text style={styles.proName}>Nimal Silva</Text>
-              <Text style={styles.proRole}>Certified Senior Electrician • 3.1 km away</Text>
+              <Text style={styles.proName}>{providerName}</Text>
+              <Text style={styles.proRole}>{providerTitle} • Active Pro</Text>
             </View>
           </View>
 

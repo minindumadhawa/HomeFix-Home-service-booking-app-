@@ -35,6 +35,7 @@ export default function BookingReviewPaymentScreen() {
     serviceTitle?: string;
     totalAmount?: string;
     category?: string;
+    providerAvatar?: string;
   }>();
 
   const selectedDate = params.selectedDate || 'Thu, Oct 8, 2026';
@@ -64,6 +65,13 @@ export default function BookingReviewPaymentScreen() {
   const handleConfirmAndBook = async () => {
     if (isSubmitting) return;
 
+    const finalTotal = params.totalAmount || '2,320.00';
+    const finalProviderName = params.providerName || 'Assigned Specialist';
+    const finalProviderTitle = params.providerTitle || (params.category ? `${params.category} Specialist` : 'Home Service Specialist');
+    const finalServiceTitle = params.serviceTitle || (params.category ? `${params.category} Service` : 'Professional Service');
+    const finalCategory = params.category || 'General';
+    const finalProviderAvatar = params.providerAvatar || '';
+
     const bookingPayload = {
       selectedDate,
       selectedTime,
@@ -73,12 +81,13 @@ export default function BookingReviewPaymentScreen() {
       addressPhone,
       landmarkInstruction,
       issueDescription,
-      totalAmount: params.totalAmount || '2,320.00',
-      providerId: params.providerId || 'nimal-silva',
-      providerName: params.providerName || 'Nimal Silva',
-      providerTitle: params.providerTitle || 'Master Electrical Specialist',
-      serviceTitle: params.serviceTitle || 'Electrical Safety & Circuit Audit',
-      category: params.category || 'Electrical',
+      totalAmount: finalTotal,
+      providerId: params.providerId || 'direct-pro',
+      providerName: finalProviderName,
+      providerTitle: finalProviderTitle,
+      providerAvatar: finalProviderAvatar,
+      serviceTitle: finalServiceTitle,
+      category: finalCategory,
     };
 
     if (selectedPayment === 'Card') {
@@ -176,8 +185,17 @@ export default function BookingReviewPaymentScreen() {
         <View style={styles.proCard}>
           <View style={styles.proCardHeader}>
             <View style={styles.proAvatarContainer}>
-              <Ionicons name="person" size={28} color="#9CA3AF" />
-              <Text style={styles.proPhotoText}>PRO PHOTO</Text>
+              {params.providerAvatar ? (
+                <Image
+                  source={{ uri: params.providerAvatar }}
+                  style={{ width: '100%', height: '100%', borderRadius: 8 }}
+                />
+              ) : (
+                <>
+                  <Ionicons name="person" size={28} color="#9CA3AF" />
+                  <Text style={styles.proPhotoText}>PRO</Text>
+                </>
+              )}
             </View>
             <View style={styles.proInfo}>
               <View style={styles.proBadgesRow}>
@@ -186,16 +204,16 @@ export default function BookingReviewPaymentScreen() {
                   <Text style={styles.verifiedText}>VERIFIED</Text>
                 </View>
                 <Text style={styles.proRating}>
-                  <Ionicons name="star" size={12} color="#FBBF24" /> 4.8{' '}
-                  <Text style={styles.proReviews}>(94 reviews)</Text>
+                  <Ionicons name="star" size={12} color="#FBBF24" /> 4.9{' '}
+                  <Text style={styles.proReviews}>(Top Rated Pro)</Text>
                 </Text>
               </View>
-              <Text style={styles.proName}>Nimal Silva Electrical Works</Text>
+              <Text style={styles.proName}>{params.providerName || 'Assigned Specialist'}</Text>
               <Text style={styles.proRate}>
-                Fixed Rate: LKR 1,800/hr <Text style={styles.proDot}>•</Text>
+                {params.providerTitle || params.serviceTitle || 'Professional Specialist'}
               </Text>
               <Text style={styles.proDistance}>
-                <Ionicons name="location" size={12} color="#9CA3AF" /> 3.1 km away
+                <Ionicons name="location" size={12} color="#9CA3AF" /> Active in Your Area
               </Text>
             </View>
           </View>
@@ -309,7 +327,7 @@ export default function BookingReviewPaymentScreen() {
               <Text style={styles.totalLabel}>Total Payable</Text>
               <Text style={styles.totalSubtext}>(Includes all taxes & platform fees)</Text>
             </View>
-            <Text style={styles.totalValue}>LKR 2,320.00</Text>
+            <Text style={styles.totalValue}>LKR {params.totalAmount || '2,320.00'}</Text>
           </View>
         </View>
 
@@ -373,7 +391,7 @@ export default function BookingReviewPaymentScreen() {
         <View style={styles.bottomBar}>
           <View style={styles.bottomPriceContainer}>
             <Text style={styles.bottomTotalLabel}>Total Amount</Text>
-            <Text style={styles.bottomTotalAmount}>LKR 2,320.00</Text>
+            <Text style={styles.bottomTotalAmount}>LKR {params.totalAmount || '2,320.00'}</Text>
           </View>
 
           <TouchableOpacity

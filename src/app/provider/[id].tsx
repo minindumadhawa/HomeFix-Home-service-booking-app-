@@ -112,6 +112,22 @@ export default function ProviderDetailsScreen() {
     setCertModalVisible(true);
   };
 
+  const handleNavigateToBook = () => {
+    if (!provider) return;
+    router.push({
+      pathname: '/book-professional',
+      params: {
+        providerId: provider.id,
+        providerName: provider.name,
+        providerTitle: provider.title,
+        providerAvatar: provider.avatarUrl,
+        serviceTitle: provider.title,
+        category: provider.category || 'Specialist Service',
+        totalAmount: provider.rates?.standard?.rate || '2,320.00',
+      },
+    });
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
@@ -219,7 +235,7 @@ export default function ProviderDetailsScreen() {
 
                 <TouchableOpacity
                   style={styles.desktopHeaderBookBtn}
-                  onPress={() => router.push('/book-professional')}
+                  onPress={handleNavigateToBook}
                 >
                   <Ionicons name="flash" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                   <Text style={styles.desktopHeaderBookText}>Instant Book</Text>
@@ -320,7 +336,7 @@ export default function ProviderDetailsScreen() {
                   </View>
                   <TouchableOpacity
                     style={styles.desktopInstantBookAction}
-                    onPress={() => router.push('/book-professional')}
+                    onPress={handleNavigateToBook}
                   >
                     <Ionicons name="calendar" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
                     <Text style={styles.desktopInstantBookActionText}>Book Service Appointment</Text>
@@ -947,7 +963,7 @@ export default function ProviderDetailsScreen() {
 
             <TouchableOpacity
               style={styles.instantBookBtn}
-              onPress={() => router.push('/book-professional')}
+              onPress={handleNavigateToBook}
             >
               <Ionicons name="flash" size={17} color="#FFFFFF" style={{ marginRight: 6, flexShrink: 0 }} />
               <Text style={styles.instantBookBtnText} numberOfLines={1}>Instant Book</Text>

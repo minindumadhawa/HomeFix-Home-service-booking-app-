@@ -27,6 +27,8 @@ export default function CardPaymentScreen() {
     totalAmount?: string;
     providerId?: string;
     providerName?: string;
+    providerTitle?: string;
+    providerAvatar?: string;
     serviceTitle?: string;
     category?: string;
   }>();
@@ -80,10 +82,12 @@ export default function CardPaymentScreen() {
         paymentStatus: 'Paid',
         cardLast4: cardNumber.replace(/\s/g, '').slice(-4) || '7890',
         status: 'Upcoming',
-        serviceTitle: params.serviceTitle || 'Electrical Safety & Circuit Audit',
-        providerName: params.providerName || 'Nimal Silva',
-        providerId: params.providerId || 'nimal-silva',
-        category: params.category || 'Electrical',
+        serviceTitle: params.serviceTitle || (params.category ? `${params.category} Service` : 'Professional Service'),
+        providerName: params.providerName || 'Assigned Specialist',
+        providerTitle: params.providerTitle || 'Certified Specialist',
+        providerAvatar: params.providerAvatar || '',
+        providerId: params.providerId || 'direct-pro',
+        category: params.category || 'General',
       });
 
       setIsProcessing(false);
@@ -127,7 +131,9 @@ export default function CardPaymentScreen() {
         <View style={styles.amountBanner}>
           <View>
             <Text style={styles.amountBannerLabel}>Total Payable Amount</Text>
-            <Text style={styles.amountBannerSub}>Service: Electrical Works (Nimal Silva)</Text>
+            <Text style={styles.amountBannerSub}>
+              Service: {params.serviceTitle || (params.category ? `${params.category} Service` : 'Professional Service')} ({params.providerName || 'Specialist'})
+            </Text>
           </View>
           <Text style={styles.amountBannerPrice}>LKR {totalAmount}</Text>
         </View>

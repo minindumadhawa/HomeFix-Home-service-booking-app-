@@ -13,6 +13,7 @@ export default function BookingAddressDetailsScreen() {
     serviceTitle?: string;
     totalAmount?: string;
     category?: string;
+    providerAvatar?: string;
   }>();
 
   const selectedDate = params.selectedDate || 'Thu, Oct 8';
@@ -256,6 +257,7 @@ export default function BookingAddressDetailsScreen() {
                 serviceTitle: params.serviceTitle,
                 totalAmount: params.totalAmount,
                 category: params.category,
+                providerAvatar: params.providerAvatar,
               },
             });
           }}
